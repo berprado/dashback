@@ -892,7 +892,8 @@ Para detener el servidor de Streamlit:
 ```
 dashboard_ventas/
 │
-├── .venv/                      # Entorno virtual
+├── .venv/                      # Entorno virtual (ignorado por Git)
+├── .git/                       # Carpeta de control de versiones
 │
 ├── config/
 │   └── database.py             # Conexión a MySQL
@@ -912,6 +913,123 @@ dashboard_ventas/
 
 ---
 
+## FASE 10: Control de Versiones con Git y GitHub
+
+### Paso 10.1: Verificar que Git está instalado
+
+```powershell
+git --version
+```
+
+**Resultado esperado:**
+```
+git version 2.44.0.windows.1
+```
+
+---
+
+### Paso 10.2: Configurar Git (solo la primera vez)
+
+Si nunca has configurado Git, ejecuta estos comandos con tus datos:
+
+```powershell
+git config --global user.name "Tu Nombre"
+git config --global user.email "tu_correo@ejemplo.com"
+```
+
+---
+
+### Paso 10.3: Inicializar el repositorio local
+
+Desde la carpeta del proyecto:
+
+```powershell
+git init
+```
+
+---
+
+### Paso 10.4: Agregar archivos y hacer el primer commit
+
+```powershell
+# Agregar todos los archivos (respetando .gitignore)
+git add .
+
+# Crear el primer commit
+git commit -m "Primer commit: Dashboard de ventas inicial"
+```
+
+---
+
+### Paso 10.5: Crear el repositorio en GitHub
+
+1. Ve a [github.com](https://github.com) e inicia sesión
+2. Clic en el botón **"New"** (o **"+"** → **"New repository"**)
+3. Configura el repositorio:
+   - **Repository name:** `dashback` (o el nombre que prefieras)
+   - **Description:** Dashboard de ventas con Python, Streamlit y MySQL
+   - **Visibilidad:** Public o Private (según tu preferencia)
+   - **NO marques** "Add a README file"
+   - **NO selecciones** .gitignore ni license
+4. Clic en **"Create repository"**
+
+---
+
+### Paso 10.6: Conectar el repositorio local con GitHub
+
+Ejecuta estos comandos en la terminal (reemplaza la URL con la de tu repositorio):
+
+```powershell
+# Conectar con el repositorio remoto
+git remote add origin https://github.com/tu_usuario/tu_repositorio.git
+
+# Renombrar la rama principal a "main"
+git branch -M main
+
+# Subir el código a GitHub
+git push -u origin main
+```
+
+**Resultado esperado:**
+```
+Enumerating objects: 13, done.
+Counting objects: 100% (13/13), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (10/10), done.
+Writing objects: 100% (13/13), 10.16 KiB | 2.03 MiB/s, done.
+Total 13 (delta 0), reused 0 (delta 0), pack-reused 0 (from 0)
+To https://github.com/tu_usuario/tu_repositorio.git
+ * [new branch]      main -> main
+branch 'main' set up to track 'origin/main'.
+```
+
+---
+
+### Paso 10.7: Flujo de trabajo diario con Git
+
+Cada vez que hagas cambios en tu proyecto, sigue este flujo:
+
+```powershell
+# 1. Ver qué archivos han cambiado
+git status
+
+# 2. Agregar los cambios
+git add .
+
+# 3. Crear un commit con un mensaje descriptivo
+git commit -m "Descripción breve de los cambios realizados"
+
+# 4. Subir los cambios a GitHub
+git push
+```
+
+> **💡 Tip:** Escribe mensajes de commit descriptivos. Por ejemplo:
+> - `"Agregar filtro por categoría en dashboard"`
+> - `"Corregir error en consulta de ventas por fecha"`
+> - `"Añadir gráfico de tendencias mensuales"`
+
+---
+
 ## COMANDOS DE REFERENCIA RÁPIDA
 
 | Acción | Comando |
@@ -923,6 +1041,11 @@ dashboard_ventas/
 | Detener dashboard | `Ctrl + C` |
 | Ver paquetes instalados | `pip list` |
 | Guardar dependencias | `pip freeze > requirements.txt` |
+| Ver estado de Git | `git status` |
+| Agregar cambios | `git add .` |
+| Crear commit | `git commit -m "mensaje"` |
+| Subir a GitHub | `git push` |
+| Descargar cambios | `git pull` |
 
 ---
 
