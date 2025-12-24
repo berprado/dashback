@@ -6,6 +6,7 @@ from src.query_store import (
 	Filters,
 	build_where,
 	fetch_dataframe,
+	q_detalle,
 	q_kpis,
 	q_por_categoria,
 	q_top_productos,
@@ -115,3 +116,18 @@ def get_top_productos(
 	where_sql, params = build_where(filters, mode)
 	sql = q_top_productos(view_name, where_sql, limit=limit)
 	return _run_df(conn, sql, params, context="Error ejecutando top productos")
+
+
+def get_detalle(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 500,
+):
+	"""Tabla detalle (para inspección / validación)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_detalle(view_name, where_sql, limit=limit)
+	return _run_df(conn, sql, params, context="Error ejecutando detalle")

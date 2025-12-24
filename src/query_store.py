@@ -179,6 +179,31 @@ def q_top_productos(view_name: str, where_sql: str, limit: int = 20) -> str:
         """
 
 
+def q_detalle(view_name: str, where_sql: str, limit: int = 500) -> str:
+        return f"""
+        SELECT
+            fecha_emision,
+            id_operacion,
+            id_comanda,
+            id_mesa,
+            usuario_reg,
+            nombre,
+            COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
+            cantidad,
+            precio_venta,
+            sub_total,
+            tipo_salida,
+            estado_comanda,
+            estado_impresion,
+            id_factura,
+            nro_factura
+        FROM {view_name}
+        {where_sql}
+        ORDER BY fecha_emision DESC
+        LIMIT {int(limit)};
+        """
+
+
 def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
     """Ejecuta un SELECT y devuelve el resultado como DataFrame.
 

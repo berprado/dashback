@@ -3,7 +3,14 @@ from __future__ import annotations
 import streamlit as st
 
 from src.db import get_connection
-from src.metrics import QueryExecutionError, get_kpis, get_top_productos, get_ventas_por_categoria, get_ventas_por_hora
+from src.metrics import (
+    QueryExecutionError,
+    get_detalle,
+    get_kpis,
+    get_top_productos,
+    get_ventas_por_categoria,
+    get_ventas_por_hora,
+)
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.components import bar_chart
@@ -170,6 +177,21 @@ else:
     except Exception as exc:
         st.error(f"Error cargando top productos: {exc}")
         _maybe_render_sql_debug(exc)
+
+st.subheader("Detalle")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver el detalle.")
+else:
+    with st.expander("Ver detalle (últimas 500 filas)", expanded=False):
+        try:
+            detalle = get_detalle(conn, startup.view_name, filters, mode_for_metrics, limit=500)
+            if detalle is None or detalle.empty:
+                st.info("Sin datos para el rango seleccionado.")
+            else:
+                st.dataframe(detalle, width="stretch")
+        except Exception as exc:
+            st.error(f"Error cargando detalle: {exc}")
+            _maybe_render_sql_debug(exc)
 
 st.subheader("Siguiente paso")
 st.write(
