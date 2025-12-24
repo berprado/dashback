@@ -13,21 +13,16 @@ st.caption("Dashboard base con conexión MySQL")
 
 with st.sidebar:
     st.header("Conexión")
-    st.write("Configura `.env` con DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME.")
+    st.write("Configura `.streamlit/secrets.toml` con `[connections.mysql]`.")
     probar = st.button("Probar conexión")
-
-
-@st.cache_resource(show_spinner=False)
-def _get_conn_cached():
-    return get_connection()
 
 
 if probar:
     try:
-        conn = _get_conn_cached()
+        conn = get_connection()
         df = fetch_dataframe(conn, Q_HEALTHCHECK)
         st.success("Conexión OK")
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
     except Exception as exc:
         st.error(f"Error conectando a MySQL: {exc}")
 
