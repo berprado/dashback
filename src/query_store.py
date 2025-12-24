@@ -136,6 +136,50 @@ def q_kpis(view_name: str, where_sql: str) -> str:
     """
 
 
+def q_estado_operativo(view_name: str, where_sql: str) -> str:
+        return f"""
+        SELECT
+            COUNT(DISTINCT CASE WHEN estado_comanda = 'PENDIENTE' THEN id_comanda END) AS comandas_pendientes,
+            COUNT(
+                DISTINCT CASE
+                    WHEN (estado_impresion IS NULL OR estado_impresion <> 'IMPRESO') THEN id_comanda
+                END
+            ) AS comandas_no_impresas
+        FROM {view_name}
+        {where_sql};
+        """
+
+
+def _append_condition(where_sql: str, condition_sql: str) -> str:
+        if where_sql.strip():
+                return f"{where_sql} AND {condition_sql}"
+        return f"WHERE {condition_sql}"
+
+
+def q_ids_comandas_pendientes(view_name: str, where_sql: str, limit: int = 50) -> str:
+        where2 = _append_condition(where_sql, "estado_comanda = 'PENDIENTE'")
+        return f"""
+        SELECT DISTINCT
+            id_comanda
+        FROM {view_name}
+        {where2}
+        ORDER BY id_comanda DESC
+        LIMIT {int(limit)};
+        """
+
+
+def q_ids_comandas_no_impresas(view_name: str, where_sql: str, limit: int = 50) -> str:
+        where2 = _append_condition(where_sql, "(estado_impresion IS NULL OR estado_impresion <> 'IMPRESO')")
+        return f"""
+        SELECT DISTINCT
+            id_comanda
+        FROM {view_name}
+        {where2}
+        ORDER BY id_comanda DESC
+        LIMIT {int(limit)};
+        """
+
+
 def q_ventas_por_hora(view_name: str, where_sql: str) -> str:
         return f"""
         SELECT
@@ -174,6 +218,22 @@ def q_top_productos(view_name: str, where_sql: str, limit: int = 20) -> str:
         FROM {view_name}
         {where_sql}
         GROUP BY nombre, COALESCE(categoria, 'SIN CATEGORIA')
+        ORDER BY total_vendido DESC
+        LIMIT {int(limit)};
+        """
+
+
+def q_por_usuario(view_name: str, where_sql: str, limit: int = 20) -> str:
+        return f"""
+        SELECT
+            COALESCE(usuario_reg, 'SIN USUARIO') AS usuario_reg,
+            COALESCE(SUM(sub_total), 0) AS total_vendido,
+            COUNT(DISTINCT id_comanda)  AS comandas,
+            COALESCE(SUM(cantidad), 0)  AS items,
+            ROUND(COALESCE(SUM(sub_total), 0) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio
+        FROM {view_name}
+        {where_sql}
+        GROUP BY COALESCE(usuario_reg, 'SIN USUARIO')
         ORDER BY total_vendido DESC
         LIMIT {int(limit)};
         """

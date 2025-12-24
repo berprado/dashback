@@ -6,10 +6,14 @@ from src.db import get_connection
 from src.metrics import (
     QueryExecutionError,
     get_detalle,
+    get_estado_operativo,
+    get_ids_comandas_no_impresas,
+    get_ids_comandas_pendientes,
     get_kpis,
     get_top_productos,
     get_ventas_por_categoria,
     get_ventas_por_hora,
+    get_ventas_por_usuario,
 )
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
@@ -67,28 +71,47 @@ try:
 
         with st.sidebar:
             st.header("Histórico")
-            if not ops:
-                st.info("No se encontraron operativas HAB para seleccionar.")
+            filtro_historico = st.radio(
+                "Filtrar histórico por",
+                ["Operativas", "Fechas"],
+                index=0,
+            )
+
+            if filtro_historico == "Fechas":
+                dt_ini_date = st.date_input("Fecha inicio")
+                dt_fin_date = st.date_input("Fecha fin")
+
+                if dt_ini_date > dt_fin_date:
+                    dt_ini_date, dt_fin_date = dt_fin_date, dt_ini_date
+
+                dt_ini = f"{dt_ini_date} 00:00:00"
+                dt_fin = f"{dt_fin_date} 23:59:59"
+
+                filters = Filters(dt_ini=dt_ini, dt_fin=dt_fin)
+                mode_for_metrics = "dates"
             else:
-                ids = [int(o["id"]) for o in ops]
-                labels = [
-                    f"#{o['id']} · {o.get('estado_operacion_nombre') or o.get('estado_operacion') or ''}".strip()
-                    for o in ops
-                ]
+                if not ops:
+                    st.info("No se encontraron operativas HAB para seleccionar.")
+                else:
+                    ids = [int(o["id"]) for o in ops]
+                    labels = [
+                        f"#{o['id']} · {o.get('estado_operacion_nombre') or o.get('estado_operacion') or ''}".strip()
+                        for o in ops
+                    ]
 
-                default_id = startup.operacion_id if startup.operacion_id in ids else ids[0]
-                default_idx = ids.index(default_id)
+                    default_id = startup.operacion_id if startup.operacion_id in ids else ids[0]
+                    default_idx = ids.index(default_id)
 
-                op_ini_label = st.selectbox("Operativa inicio", labels, index=default_idx)
-                op_fin_label = st.selectbox("Operativa fin", labels, index=default_idx)
+                    op_ini_label = st.selectbox("Operativa inicio", labels, index=default_idx)
+                    op_fin_label = st.selectbox("Operativa fin", labels, index=default_idx)
 
-                op_ini = ids[labels.index(op_ini_label)]
-                op_fin = ids[labels.index(op_fin_label)]
-                if op_ini > op_fin:
-                    op_ini, op_fin = op_fin, op_ini
+                    op_ini = ids[labels.index(op_ini_label)]
+                    op_fin = ids[labels.index(op_fin_label)]
+                    if op_ini > op_fin:
+                        op_ini, op_fin = op_fin, op_ini
 
-                filters = Filters(op_ini=op_ini, op_fin=op_fin)
-                mode_for_metrics = "ops"
+                    filters = Filters(op_ini=op_ini, op_fin=op_fin)
+                    mode_for_metrics = "ops"
     else:
         if startup.operacion_id is not None:
             filters = Filters(op_ini=startup.operacion_id, op_fin=startup.operacion_id)
@@ -128,6 +151,47 @@ else:
         c4.metric("Ticket promedio", f"{kpis['ticket_promedio']:.2f}")
     except Exception as exc:
         st.error(f"Error calculando KPIs: {exc}")
+        _maybe_render_sql_debug(exc)
+
+st.subheader("Estado operativo")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver estado operativo.")
+else:
+    try:
+        estado = get_estado_operativo(conn, startup.view_name, filters, mode_for_metrics)
+        e1, e2 = st.columns(2)
+        e1.metric("Comandas pendientes", f"{estado['comandas_pendientes']}")
+        e2.metric("Comandas no impresas", f"{estado['comandas_no_impresas']}")
+
+        with st.expander("Ver IDs de comandas (pendientes / no impresas)", expanded=False):
+            cargar_ids = st.checkbox("Cargar IDs", value=False, key="estado_operativo_load_ids")
+            limit = st.number_input("Límite", min_value=10, max_value=200, value=50, step=10)
+
+            if cargar_ids:
+                ids_pend = get_ids_comandas_pendientes(
+                    conn,
+                    startup.view_name,
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit),
+                )
+                ids_noimp = get_ids_comandas_no_impresas(
+                    conn,
+                    startup.view_name,
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit),
+                )
+
+                i1, i2 = st.columns(2)
+                i1.caption("Pendientes")
+                i1.caption(f"Mostrando {len(ids_pend)} (límite {int(limit)})")
+                i1.code(", ".join(map(str, ids_pend)) if ids_pend else "—")
+                i2.caption("No impresas")
+                i2.caption(f"Mostrando {len(ids_noimp)} (límite {int(limit)})")
+                i2.code(", ".join(map(str, ids_noimp)) if ids_noimp else "—")
+    except Exception as exc:
+        st.error(f"Error cargando estado operativo: {exc}")
         _maybe_render_sql_debug(exc)
 
 st.subheader("Ventas por hora")
@@ -176,6 +240,21 @@ else:
             st.plotly_chart(fig, width="stretch")
     except Exception as exc:
         st.error(f"Error cargando top productos: {exc}")
+        _maybe_render_sql_debug(exc)
+
+st.subheader("Ventas por usuario")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver ventas por usuario.")
+else:
+    try:
+        por_usuario = get_ventas_por_usuario(conn, startup.view_name, filters, mode_for_metrics, limit=20)
+        if por_usuario is None or por_usuario.empty:
+            st.info("Sin datos para el rango seleccionado.")
+        else:
+            fig = bar_chart(por_usuario, x="total_vendido", y="usuario_reg", title=None, orientation="h")
+            st.plotly_chart(fig, width="stretch")
+    except Exception as exc:
+        st.error(f"Error cargando ventas por usuario: {exc}")
         _maybe_render_sql_debug(exc)
 
 st.subheader("Detalle")

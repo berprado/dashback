@@ -6,8 +6,12 @@ from src.query_store import (
 	Filters,
 	build_where,
 	fetch_dataframe,
+	q_ids_comandas_no_impresas,
+	q_ids_comandas_pendientes,
 	q_detalle,
+	q_estado_operativo,
 	q_kpis,
+	q_por_usuario,
 	q_por_categoria,
 	q_top_productos,
 	q_ventas_por_hora,
@@ -88,6 +92,79 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 	}
 
 
+def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str, Any]:
+	"""KPIs operativos (pendientes / impresión).
+
+	Se apoya en los campos humanizados de la vista: `estado_comanda` y `estado_impresion`.
+	"""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_estado_operativo(view_name, where_sql)
+	df = _run_df(conn, sql, params, context="Error ejecutando estado operativo")
+
+	if df is None or df.empty:
+		return {
+			"comandas_pendientes": 0,
+			"comandas_no_impresas": 0,
+		}
+
+	row = df.iloc[0].to_dict()
+	return {
+		"comandas_pendientes": _to_int(row.get("comandas_pendientes")),
+		"comandas_no_impresas": _to_int(row.get("comandas_no_impresas")),
+	}
+
+
+def get_ids_comandas_pendientes(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 50,
+) -> list[int]:
+	"""IDs de comandas pendientes (top por id desc)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_ids_comandas_pendientes(view_name, where_sql, limit=limit)
+	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas pendientes")
+
+	if df is None or df.empty or "id_comanda" not in df.columns:
+		return []
+
+	ids: list[int] = []
+	for value in df["id_comanda"].tolist():
+		iv = _to_int(value)
+		if iv:
+			ids.append(iv)
+	return ids
+
+
+def get_ids_comandas_no_impresas(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 50,
+) -> list[int]:
+	"""IDs de comandas no impresas (top por id desc)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_ids_comandas_no_impresas(view_name, where_sql, limit=limit)
+	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas no impresas")
+
+	if df is None or df.empty or "id_comanda" not in df.columns:
+		return []
+
+	ids: list[int] = []
+	for value in df["id_comanda"].tolist():
+		iv = _to_int(value)
+		if iv:
+			ids.append(iv)
+	return ids
+
+
 def get_ventas_por_hora(conn: Any, view_name: str, filters: Filters, mode: str):
 	"""Ventas por hora (para gráfico)."""
 
@@ -102,6 +179,21 @@ def get_ventas_por_categoria(conn: Any, view_name: str, filters: Filters, mode: 
 	where_sql, params = build_where(filters, mode)
 	sql = q_por_categoria(view_name, where_sql)
 	return _run_df(conn, sql, params, context="Error ejecutando ventas por categoría")
+
+
+def get_ventas_por_usuario(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 20,
+):
+	"""Ventas por usuario (ranking)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_por_usuario(view_name, where_sql, limit=limit)
+	return _run_df(conn, sql, params, context="Error ejecutando ventas por usuario")
 
 
 def get_top_productos(
