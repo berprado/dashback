@@ -3,7 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from src.db import get_connection
-from src.metrics import get_kpis, get_ventas_por_hora
+from src.metrics import QueryExecutionError, get_kpis, get_top_productos, get_ventas_por_categoria, get_ventas_por_hora
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.components import bar_chart
@@ -14,6 +14,25 @@ st.set_page_config(page_title="Dashback", layout="wide")
 
 render_page_header()
 probar = render_sidebar_connection_section()
+
+
+with st.sidebar:
+    st.header("Debug")
+    debug_sql = st.checkbox("Mostrar SQL/params en errores", value=False)
+
+
+def _maybe_render_sql_debug(exc: Exception) -> None:
+    if not debug_sql:
+        return
+    if not isinstance(exc, QueryExecutionError):
+        return
+
+    st.divider()
+    st.subheader("Debug SQL")
+    st.caption("SQL")
+    st.code(exc.sql, language="sql")
+    st.caption("Params")
+    st.json(exc.params)
 
 
 conn = None
@@ -102,6 +121,7 @@ else:
         c4.metric("Ticket promedio", f"{kpis['ticket_promedio']:.2f}")
     except Exception as exc:
         st.error(f"Error calculando KPIs: {exc}")
+        _maybe_render_sql_debug(exc)
 
 st.subheader("Ventas por hora")
 if conn is None or startup is None:
@@ -116,9 +136,40 @@ else:
                 st.info("Sin datos para el rango seleccionado.")
         else:
             fig = bar_chart(por_hora, x="hora", y="total_vendido", title=None)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
     except Exception as exc:
         st.error(f"Error cargando ventas por hora: {exc}")
+        _maybe_render_sql_debug(exc)
+
+st.subheader("Ventas por categoría")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver ventas por categoría.")
+else:
+    try:
+        por_categoria = get_ventas_por_categoria(conn, startup.view_name, filters, mode_for_metrics)
+        if por_categoria is None or por_categoria.empty:
+            st.info("Sin datos para el rango seleccionado.")
+        else:
+            fig = bar_chart(por_categoria, x="categoria", y="total_vendido", title=None)
+            st.plotly_chart(fig, width="stretch")
+    except Exception as exc:
+        st.error(f"Error cargando ventas por categoría: {exc}")
+        _maybe_render_sql_debug(exc)
+
+st.subheader("Top productos")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver top productos.")
+else:
+    try:
+        top = get_top_productos(conn, startup.view_name, filters, mode_for_metrics, limit=20)
+        if top is None or top.empty:
+            st.info("Sin datos para el rango seleccionado.")
+        else:
+            fig = bar_chart(top, x="total_vendido", y="nombre", title=None, orientation="h")
+            st.plotly_chart(fig, width="stretch")
+    except Exception as exc:
+        st.error(f"Error cargando top productos: {exc}")
+        _maybe_render_sql_debug(exc)
 
 st.subheader("Siguiente paso")
 st.write(

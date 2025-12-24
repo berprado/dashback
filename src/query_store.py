@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+import re
+
 import pandas as pd
 
 
@@ -92,13 +94,13 @@ def build_where(filters: Filters, mode: str) -> tuple[str, dict[str, Any]]:
     if mode == "ops":
         if filters.op_ini is None or filters.op_fin is None:
             raise ValueError("mode='ops' requiere op_ini y op_fin")
-        clauses.append("id_operacion BETWEEN %(op_ini)s AND %(op_fin)s")
+        clauses.append("id_operacion BETWEEN :op_ini AND :op_fin")
         params["op_ini"] = int(filters.op_ini)
         params["op_fin"] = int(filters.op_fin)
     elif mode == "dates":
         if filters.dt_ini is None or filters.dt_fin is None:
             raise ValueError("mode='dates' requiere dt_ini y dt_fin")
-        clauses.append("fecha_emision BETWEEN %(dt_ini)s AND %(dt_fin)s")
+        clauses.append("fecha_emision BETWEEN :dt_ini AND :dt_fin")
         params["dt_ini"] = filters.dt_ini
         params["dt_fin"] = filters.dt_fin
     elif mode == "none":
@@ -111,6 +113,15 @@ def build_where(filters: Filters, mode: str) -> tuple[str, dict[str, Any]]:
         where_sql = "WHERE " + " AND ".join(clauses)
 
     return where_sql, params
+
+
+_SQLA_PARAM_RE = re.compile(r":([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def _to_mysqlconnector_paramstyle(query: str) -> str:
+    """Convierte placeholders SQLAlchemy (:name) a mysql-connector (%(name)s)."""
+
+    return _SQLA_PARAM_RE.sub(r"%(\1)s", query)
 
 
 def q_kpis(view_name: str, where_sql: str) -> str:
@@ -139,6 +150,35 @@ def q_ventas_por_hora(view_name: str, where_sql: str) -> str:
         """
 
 
+def q_por_categoria(view_name: str, where_sql: str) -> str:
+        return f"""
+        SELECT
+            COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
+            COALESCE(SUM(sub_total), 0) AS total_vendido,
+            COALESCE(SUM(cantidad), 0)  AS unidades,
+            COUNT(DISTINCT id_comanda)  AS comandas
+        FROM {view_name}
+        {where_sql}
+        GROUP BY COALESCE(categoria, 'SIN CATEGORIA')
+        ORDER BY total_vendido DESC;
+        """
+
+
+def q_top_productos(view_name: str, where_sql: str, limit: int = 20) -> str:
+        return f"""
+        SELECT
+            nombre,
+            COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
+            COALESCE(SUM(cantidad), 0) AS unidades,
+            COALESCE(SUM(sub_total), 0) AS total_vendido
+        FROM {view_name}
+        {where_sql}
+        GROUP BY nombre, COALESCE(categoria, 'SIN CATEGORIA')
+        ORDER BY total_vendido DESC
+        LIMIT {int(limit)};
+        """
+
+
 def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
     """Ejecuta un SELECT y devuelve el resultado como DataFrame.
 
@@ -152,6 +192,8 @@ def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None)
             return conn.query(query, params=params or {}, ttl=0)
         except TypeError:
             return conn.query(query, params=params or {})
+
+    query = _to_mysqlconnector_paramstyle(query)
 
     cursor = conn.cursor(dictionary=True)
     try:

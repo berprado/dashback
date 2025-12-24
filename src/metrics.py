@@ -2,7 +2,43 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.query_store import Filters, build_where, fetch_dataframe, q_kpis, q_ventas_por_hora
+from src.query_store import (
+	Filters,
+	build_where,
+	fetch_dataframe,
+	q_kpis,
+	q_por_categoria,
+	q_top_productos,
+	q_ventas_por_hora,
+)
+
+
+class QueryExecutionError(RuntimeError):
+	"""Error enriquecido para depurar consultas SQL.
+
+	Se usa como "smoke check" opcional para mostrar el SQL y params
+	que se intentaron ejecutar, sin exponer secretos.
+	"""
+
+	def __init__(
+		self,
+		message: str,
+		*,
+		sql: str,
+		params: dict[str, Any],
+		original_exc: Exception,
+	) -> None:
+		super().__init__(f"{message}: {original_exc}")
+		self.sql = sql
+		self.params = params
+		self.original_exc = original_exc
+
+
+def _run_df(conn: Any, sql: str, params: dict[str, Any], *, context: str):
+	try:
+		return fetch_dataframe(conn, sql, params)
+	except Exception as exc:
+		raise QueryExecutionError(context, sql=sql, params=params, original_exc=exc) from exc
 
 
 def _to_float(value: Any) -> float:
@@ -31,7 +67,8 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 	"""
 
 	where_sql, params = build_where(filters, mode)
-	df = fetch_dataframe(conn, q_kpis(view_name, where_sql), params)
+	sql = q_kpis(view_name, where_sql)
+	df = _run_df(conn, sql, params, context="Error ejecutando KPIs")
 
 	if df is None or df.empty:
 		return {
@@ -54,4 +91,27 @@ def get_ventas_por_hora(conn: Any, view_name: str, filters: Filters, mode: str):
 	"""Ventas por hora (para gráfico)."""
 
 	where_sql, params = build_where(filters, mode)
-	return fetch_dataframe(conn, q_ventas_por_hora(view_name, where_sql), params)
+	sql = q_ventas_por_hora(view_name, where_sql)
+	return _run_df(conn, sql, params, context="Error ejecutando ventas por hora")
+
+
+def get_ventas_por_categoria(conn: Any, view_name: str, filters: Filters, mode: str):
+	"""Ventas por categoría (para gráfico)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_por_categoria(view_name, where_sql)
+	return _run_df(conn, sql, params, context="Error ejecutando ventas por categoría")
+
+
+def get_top_productos(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	limit: int = 20,
+):
+	"""Top productos por total vendido (para gráfico)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_top_productos(view_name, where_sql, limit=limit)
+	return _run_df(conn, sql, params, context="Error ejecutando top productos")
