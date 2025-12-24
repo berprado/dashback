@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.query_store import Filters, build_where, fetch_dataframe, q_kpis
+from src.query_store import Filters, build_where, fetch_dataframe, q_kpis, q_ventas_por_hora
 
 
 def _to_float(value: Any) -> float:
@@ -48,3 +48,10 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 		"items_vendidos": _to_float(row.get("items_vendidos")),
 		"ticket_promedio": _to_float(row.get("ticket_promedio")),
 	}
+
+
+def get_ventas_por_hora(conn: Any, view_name: str, filters: Filters, mode: str):
+	"""Ventas por hora (para gráfico)."""
+
+	where_sql, params = build_where(filters, mode)
+	return fetch_dataframe(conn, q_ventas_por_hora(view_name, where_sql), params)

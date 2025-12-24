@@ -125,6 +125,20 @@ def q_kpis(view_name: str, where_sql: str) -> str:
     """
 
 
+def q_ventas_por_hora(view_name: str, where_sql: str) -> str:
+        return f"""
+        SELECT
+            HOUR(fecha_emision) AS hora,
+            COALESCE(SUM(sub_total), 0) AS total_vendido,
+            COUNT(DISTINCT id_comanda) AS comandas,
+            COALESCE(SUM(cantidad), 0) AS items
+        FROM {view_name}
+        {where_sql}
+        GROUP BY HOUR(fecha_emision)
+        ORDER BY hora;
+        """
+
+
 def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
     """Ejecuta un SELECT y devuelve el resultado como DataFrame.
 
