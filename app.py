@@ -24,7 +24,7 @@ from src.ui.layout import render_page_header, render_sidebar_connection_section
 st.set_page_config(page_title="Dashback", layout="wide")
 
 render_page_header()
-probar = render_sidebar_connection_section()
+probar, connection_name = render_sidebar_connection_section()
 
 
 with st.sidebar:
@@ -52,8 +52,13 @@ filters = Filters()
 mode_for_metrics = "none"
 
 try:
-    conn = get_connection()
+    conn = get_connection(connection_name)
     startup = determine_startup_context(conn)
+
+    if startup.mode == "realtime":
+        with st.sidebar:
+            st.header("Tiempo real")
+            st.button("Actualizar", help="Vuelve a consultar la base y refresca el dashboard")
 
     if startup.mode == "realtime":
         st.success(startup.message)
@@ -129,9 +134,36 @@ except Exception as exc:
 if probar:
     try:
         if conn is None:
-            conn = get_connection()
+            conn = get_connection(connection_name)
         df = fetch_dataframe(conn, Q_HEALTHCHECK)
-        st.success("Conexión OK")
+        missing: list[str] = []
+        db_name = None
+        if df is not None and not df.empty:
+            if "database_name" in df.columns:
+                try:
+                    db_name = df["database_name"].iloc[0]
+                except Exception:
+                    db_name = None
+            if "object_name" in df.columns and "exists_in_db" in df.columns:
+                missing = [
+                    str(row["object_name"])
+                    for _, row in df.iterrows()
+                    if int(row.get("exists_in_db") or 0) == 0
+                ]
+
+        if missing:
+            st.warning(
+                "Conexión OK, pero faltan vistas/tablas requeridas en la base activa"
+                + (f" ({db_name})" if db_name else "")
+                + f": {', '.join(missing)}"
+            )
+        else:
+            st.success(
+                "Conexión OK"
+                + (f" · Base activa: {db_name}" if db_name else "")
+                + " · Vistas OK"
+            )
+
         st.dataframe(df, width="stretch")
     except Exception as exc:
         st.error(f"Error conectando a MySQL: {exc}")
@@ -262,12 +294,14 @@ if conn is None or startup is None:
     st.info("Conecta a la base de datos para ver el detalle.")
 else:
     with st.expander("Ver detalle (últimas 500 filas)", expanded=False):
+        cargar_detalle = st.checkbox("Cargar detalle", value=False, key="detalle_load")
         try:
-            detalle = get_detalle(conn, startup.view_name, filters, mode_for_metrics, limit=500)
-            if detalle is None or detalle.empty:
-                st.info("Sin datos para el rango seleccionado.")
-            else:
-                st.dataframe(detalle, width="stretch")
+            if cargar_detalle:
+                detalle = get_detalle(conn, startup.view_name, filters, mode_for_metrics, limit=500)
+                if detalle is None or detalle.empty:
+                    st.info("Sin datos para el rango seleccionado.")
+                else:
+                    st.dataframe(detalle, width="stretch")
         except Exception as exc:
             st.error(f"Error cargando detalle: {exc}")
             _maybe_render_sql_debug(exc)

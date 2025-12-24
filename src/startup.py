@@ -14,8 +14,8 @@ from src.query_store import (
 )
 
 
-VIEW_REALTIME = "adminerp_copy.comandas_v6"
-VIEW_HISTORICAL = "adminerp_copy.comandas_v6_todas"
+VIEW_REALTIME = "comandas_v6"
+VIEW_HISTORICAL = "comandas_v6_todas"
 
 
 @dataclass(frozen=True)

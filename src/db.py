@@ -7,7 +7,7 @@ from streamlit.connections.sql_connection import SQLConnection
 
 
 @st.cache_resource(show_spinner=False)
-def get_connection() -> SQLConnection:
+def get_connection(connection_name: str = "mysql") -> SQLConnection:
     """Devuelve la conexión MySQL configurada en `.streamlit/secrets.toml`.
 
     Requiere que exista un bloque como:
@@ -15,6 +15,12 @@ def get_connection() -> SQLConnection:
     [connections.mysql]
     type = "sql"
     url = "mysql+mysqlconnector://user:pass@host:3306/db"
+
+    Para producción, se puede definir adicionalmente:
+
+    [connections.mysql_prod]
+    type = "sql"
+    url = "mysql+mysqlconnector://user:pass@host:3306/db"
     """
 
-    return cast(SQLConnection, st.connection("mysql", type="sql"))
+    return cast(SQLConnection, st.connection(connection_name, type="sql"))

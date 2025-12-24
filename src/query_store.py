@@ -9,7 +9,22 @@ import pandas as pd
 
 
 # Define aquí tus consultas SQL reutilizables
-Q_HEALTHCHECK = "SELECT 1 AS ok"  # útil para probar conexión
+# Healthcheck: valida conexión y existencia de vistas/tablas esperadas en la DB activa.
+Q_HEALTHCHECK = """
+SELECT
+    req.object_name,
+    CASE WHEN t.TABLE_NAME IS NULL THEN 0 ELSE 1 END AS exists_in_db,
+    t.TABLE_TYPE AS object_type,
+    DATABASE() AS database_name
+FROM (
+    SELECT 'comandas_v6' AS object_name
+    UNION ALL SELECT 'comandas_v6_todas'
+    UNION ALL SELECT 'comandas_v6_base'
+) req
+LEFT JOIN information_schema.TABLES t
+    ON t.TABLE_SCHEMA = DATABASE()
+ AND t.TABLE_NAME = req.object_name;
+"""
 
 # Startup / modo operativo (ver docs/01-flujo_inicio_dashboard.md)
 Q_STARTUP_ACTIVE_OPERATION = """
@@ -17,8 +32,8 @@ SELECT
     op.id AS id_operacion,
     op.estado_operacion AS estado_operacion_id,
     eop.nombre AS estado_operacion
-FROM adminerp_copy.ope_operacion op
-LEFT JOIN adminerp_copy.parameter_table eop
+FROM ope_operacion op
+LEFT JOIN parameter_table eop
     ON eop.id = op.estado_operacion
  AND eop.id_master = 6
  AND eop.estado = 'HAB'
@@ -33,8 +48,8 @@ SELECT
     op.id AS id_operacion,
     op.estado_operacion AS estado_operacion_id,
     eop.nombre AS estado_operacion
-FROM adminerp_copy.ope_operacion op
-LEFT JOIN adminerp_copy.parameter_table eop
+FROM ope_operacion op
+LEFT JOIN parameter_table eop
     ON eop.id = op.estado_operacion
  AND eop.id_master = 6
  AND eop.estado = 'HAB'
@@ -44,7 +59,7 @@ ORDER BY op.id DESC
 LIMIT 1;
 """
 
-Q_STARTUP_HAS_REALTIME_ROWS = "SELECT 1 AS has_rows FROM adminerp_copy.comandas_v6 LIMIT 1;"
+Q_STARTUP_HAS_REALTIME_ROWS = "SELECT 1 AS has_rows FROM comandas_v6 LIMIT 1;"
 
 
 # Selector UI (ver docs/02-guia_dashboard_backstage.md, Apéndice A)
@@ -55,8 +70,8 @@ SELECT
   op.nombre_operacion,
   op.estado_operacion,
   eop.nombre AS estado_operacion_nombre
-FROM adminerp_copy.ope_operacion op
-LEFT JOIN adminerp_copy.parameter_table eop
+FROM ope_operacion op
+LEFT JOIN parameter_table eop
   ON eop.id = op.estado_operacion
  AND eop.id_master = 6
  AND eop.estado = 'HAB'
