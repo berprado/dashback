@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Iterable
 
 import pandas as pd
@@ -42,6 +43,86 @@ LIMIT 1;
 """
 
 Q_STARTUP_HAS_REALTIME_ROWS = "SELECT 1 AS has_rows FROM adminerp_copy.comandas_v6 LIMIT 1;"
+
+
+# Selector UI (ver docs/02-guia_dashboard_backstage.md, Apéndice A)
+Q_LIST_OPERATIONS = """
+SELECT
+  op.id,
+  op.fecha,
+  op.nombre_operacion,
+  op.estado_operacion,
+  eop.nombre AS estado_operacion_nombre
+FROM adminerp_copy.ope_operacion op
+LEFT JOIN adminerp_copy.parameter_table eop
+  ON eop.id = op.estado_operacion
+ AND eop.id_master = 6
+ AND eop.estado = 'HAB'
+WHERE op.estado = 'HAB'
+ORDER BY op.id DESC
+LIMIT 200;
+"""
+
+
+@dataclass(frozen=True)
+class Filters:
+    """Filtros para consultas del dashboard.
+
+    Nota: en la fase inicial, usamos principalmente rangos por operativa.
+    """
+
+    op_ini: int | None = None
+    op_fin: int | None = None
+    dt_ini: str | None = None  # 'YYYY-MM-DD HH:MM:SS'
+    dt_fin: str | None = None
+
+
+def build_where(filters: Filters, mode: str) -> tuple[str, dict[str, Any]]:
+    """Construye WHERE + params.
+
+    mode:
+      - 'ops'   -> filtra por id_operacion BETWEEN
+      - 'dates' -> filtra por fecha_emision BETWEEN
+      - 'none'  -> sin rango (solo tiempo real; la vista ya viene acotada)
+    """
+
+    clauses: list[str] = []
+    params: dict[str, Any] = {}
+
+    if mode == "ops":
+        if filters.op_ini is None or filters.op_fin is None:
+            raise ValueError("mode='ops' requiere op_ini y op_fin")
+        clauses.append("id_operacion BETWEEN %(op_ini)s AND %(op_fin)s")
+        params["op_ini"] = int(filters.op_ini)
+        params["op_fin"] = int(filters.op_fin)
+    elif mode == "dates":
+        if filters.dt_ini is None or filters.dt_fin is None:
+            raise ValueError("mode='dates' requiere dt_ini y dt_fin")
+        clauses.append("fecha_emision BETWEEN %(dt_ini)s AND %(dt_fin)s")
+        params["dt_ini"] = filters.dt_ini
+        params["dt_fin"] = filters.dt_fin
+    elif mode == "none":
+        pass
+    else:
+        raise ValueError("mode inválido: use 'ops'|'dates'|'none'")
+
+    where_sql = ""
+    if clauses:
+        where_sql = "WHERE " + " AND ".join(clauses)
+
+    return where_sql, params
+
+
+def q_kpis(view_name: str, where_sql: str) -> str:
+    return f"""
+    SELECT
+      COALESCE(SUM(sub_total), 0) AS total_vendido,
+      COUNT(DISTINCT id_comanda)  AS total_comandas,
+      COALESCE(SUM(cantidad), 0)  AS items_vendidos,
+      ROUND(COALESCE(SUM(sub_total), 0) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio
+    FROM {view_name}
+    {where_sql};
+    """
 
 
 def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:

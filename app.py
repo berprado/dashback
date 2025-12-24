@@ -3,7 +3,8 @@ from __future__ import annotations
 import streamlit as st
 
 from src.db import get_connection
-from src.query_store import Q_HEALTHCHECK, fetch_dataframe
+from src.metrics import get_kpis
+from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.layout import render_page_header, render_sidebar_connection_section
 
@@ -15,6 +16,9 @@ probar = render_sidebar_connection_section()
 
 
 conn = None
+startup = None
+filters = Filters()
+mode_for_metrics = "none"
 
 try:
     conn = get_connection()
@@ -26,6 +30,39 @@ try:
         st.info(startup.message)
 
     st.caption(f"Modo: {startup.mode} · Vista: {startup.view_name}")
+
+    if startup.mode == "historical":
+        ops_df = fetch_dataframe(conn, Q_LIST_OPERATIONS)
+        ops: list[dict] = []
+        if ops_df is not None and not ops_df.empty:
+            ops = ops_df.to_dict(orient="records")
+
+        with st.sidebar:
+            st.header("Histórico")
+            if not ops:
+                st.info("No se encontraron operativas HAB para seleccionar.")
+            else:
+                ids = [int(o["id"]) for o in ops]
+                labels = [
+                    f"#{o['id']} · {o.get('estado_operacion_nombre') or o.get('estado_operacion') or ''}".strip()
+                    for o in ops
+                ]
+
+                default_id = startup.operacion_id if startup.operacion_id in ids else ids[0]
+                default_idx = ids.index(default_id)
+
+                op_ini_label = st.selectbox("Operativa inicio", labels, index=default_idx)
+                op_fin_label = st.selectbox("Operativa fin", labels, index=default_idx)
+
+                op_ini = ids[labels.index(op_ini_label)]
+                op_fin = ids[labels.index(op_fin_label)]
+                if op_ini > op_fin:
+                    op_ini, op_fin = op_fin, op_ini
+
+                filters = Filters(op_ini=op_ini, op_fin=op_fin)
+                mode_for_metrics = "ops"
+    else:
+        mode_for_metrics = "none"
 except Exception as exc:
     st.warning(
         "No se pudo determinar el contexto operativo automáticamente. "
@@ -45,6 +82,20 @@ if probar:
         st.error(f"Error conectando a MySQL: {exc}")
 
 st.divider()
+
+st.subheader("KPIs")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver KPIs.")
+else:
+    try:
+        kpis = get_kpis(conn, startup.view_name, filters, mode_for_metrics)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total vendido", f"{kpis['total_vendido']:.2f}")
+        c2.metric("Comandas", f"{kpis['total_comandas']}")
+        c3.metric("Ítems", f"{kpis['items_vendidos']:.0f}")
+        c4.metric("Ticket promedio", f"{kpis['ticket_promedio']:.2f}")
+    except Exception as exc:
+        st.error(f"Error calculando KPIs: {exc}")
 
 st.subheader("Siguiente paso")
 st.write(
