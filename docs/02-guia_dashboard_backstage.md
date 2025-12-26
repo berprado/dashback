@@ -5,6 +5,22 @@
 
 ---
 
+## Estado de implementación (en este repo)
+
+Esta guía mezcla 2 cosas:
+
+- ✅ **Implementado en el código** (lo que hoy corre en el repo):
+  - Conexión vía **Streamlit Connections** (`.streamlit/secrets.toml`)
+  - Arranque **tiempo real vs histórico** (selección de vista y defaults)
+  - Filtros básicos con `Filters` + `build_where` (por operativas o fechas)
+  - KPIs, cortesías, estado operativo, gráficos, detalle bajo demanda
+  - Bloque **Actividad** (última comanda / minutos desde la última / ritmo)
+- 🟡 **Guía/Referencia o Futuro** (no necesariamente implementado tal cual):
+  - Ejemplos de engine SQLAlchemy “manual” (`create_engine`) y `pd.read_sql`
+  - Prefacturación (`q_prefacturacion`) y otros bloques mencionados como ideas
+
+Cuando haya dudas, la fuente de verdad es el código en `src/`.
+
 ## 0) Requisitos y supuestos
 
 ### Tecnologías
@@ -183,6 +199,9 @@ dashboard/
 
 ### 3.2 `query_store.py` (patrón del repo)
 
+✅ Nota: la implementación real vive en `src/query_store.py` (queries + `fetch_dataframe`).
+Los snippets de esta sección son de referencia y pueden simplificar/omitir partes.
+
 En este proyecto se usa **Streamlit Connections**, por lo que la parametrización recomendada es estilo SQLAlchemy: `:param`.
 
 ```python
@@ -331,6 +350,8 @@ def q_por_usuario(view_name: str, where_sql: str) -> str:
     """
 
 def q_prefacturacion(view_name: str, where_sql: str) -> str:
+
+  # 🟡 Futuro / no implementado aún en el repo (idea documentada)
     return f"""
     SELECT
       SUM(CASE WHEN (id_factura IS NOT NULL OR nro_factura IS NOT NULL) THEN sub_total ELSE 0 END) AS monto_facturado,
@@ -368,6 +389,10 @@ def q_detalle(view_name: str, where_sql: str, limit: int = 500) -> str:
 ```
 
 ### 3.3 `db.py` (helper mínimo)
+
+✅ En este repo, `src/db.py` usa `st.connection(..., type="sql")` (Streamlit Connections).
+El ejemplo con `create_engine` es **alternativo** y aplica si se decide no usar Connections.
+
 ```python
 # src/db.py
 import streamlit as st
@@ -385,6 +410,10 @@ def read_df(sql: str, params: dict):
 ```
 
 ### 3.4 `metrics.py` (capa de servicio)
+
+✅ En este repo, la capa de servicio real está en `src/metrics.py` y expone funciones
+granulares (por bloque) en vez de un `get_dashboard_data` único.
+
 ```python
 # src/metrics.py
 from .db import read_df

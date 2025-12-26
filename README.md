@@ -19,6 +19,10 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 - [docs/02-guia_dashboard_backstage.md](docs/02-guia_dashboard_backstage.md): guía técnica por etapas + definición de vistas.
 - [docs/03-evolucion_y_mejoras.md](docs/03-evolucion_y_mejoras.md): evolución y cambios implementados (fase 1).
 
+## Estado de implementación
+- ✅ Implementado (lo que corre hoy en este repo): conexión por Streamlit Connections, arranque tiempo real/histórico, KPIs/bloques principales, actividad, gráficos y detalle bajo demanda.
+- 🟡 Ideas / futuro: prefacturación, export, sparklines, cache TTL, autenticación/roles (ver "Próximas versiones").
+
 ## Funcionalidades actuales
 - **Selección de origen de datos** desde el sidebar: Local (`connections.mysql`) o Producción (`connections.mysql_prod`).
 - **Modo automático** al iniciar:

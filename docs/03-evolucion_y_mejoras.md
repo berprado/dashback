@@ -110,6 +110,13 @@ Se agregó un bloque de “Actividad” basado en `fecha_emision` para medir el 
 
 Nota: el cálculo es por comanda (`id_comanda`), no por ítem.
 
+Interpretación rápida del “Ritmo” (importante):
+- Se usa **mediana** (no promedio) de los minutos entre comandas consecutivas.
+- “Últimas 10” mide el pulso reciente; “operativa/rango” mide el pulso global del contexto.
+- Si hay menos de 2 comandas válidas en el conjunto, el ritmo se muestra vacío (no hay intervalos).
+- Los “intervalos usados” indican cuántas diferencias de tiempo entraron al cálculo.
+- “Min desde última” se calcula contra el reloj del servidor donde corre Streamlit; si el servidor tiene zona horaria distinta a MySQL, ese valor puede diferir de la expectativa.
+
 ### 4.6 Detalle bajo demanda
 
 Se agregó una tabla de **detalle** (últimas 500 filas) dentro de un expander.
