@@ -146,6 +146,30 @@ def q_kpis(view_name: str, where_sql: str) -> str:
       COUNT(DISTINCT id_comanda)  AS total_comandas,
       COALESCE(SUM(cantidad), 0)  AS items_vendidos,
       ROUND(COALESCE(SUM(sub_total), 0) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio
+
+            ,COALESCE(
+                SUM(
+                    CASE
+                        WHEN UPPER(COALESCE(tipo_salida, '')) = 'CORTESIA'
+                            THEN COALESCE(cor_subtotal_anterior, sub_total, 0)
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_cortesia
+
+            ,COUNT(
+                DISTINCT CASE
+                    WHEN UPPER(COALESCE(tipo_salida, '')) = 'CORTESIA' THEN id_comanda
+                END
+            ) AS comandas_cortesia
+
+            ,COALESCE(
+                SUM(
+                    CASE WHEN UPPER(COALESCE(tipo_salida, '')) = 'CORTESIA' THEN cantidad ELSE 0 END
+                ),
+                0
+            ) AS items_cortesia
     FROM {view_name}
     {where_sql};
     """

@@ -181,6 +181,11 @@ else:
         c2.metric("Comandas", f"{kpis['total_comandas']}")
         c3.metric("Ítems", f"{kpis['items_vendidos']:.0f}")
         c4.metric("Ticket promedio", f"{kpis['ticket_promedio']:.2f}")
+
+        k1, k2, k3 = st.columns(3)
+        k1.metric("Total cortesías", f"{kpis['total_cortesia']:.2f}")
+        k2.metric("Comandas cortesía", f"{kpis['comandas_cortesia']}")
+        k3.metric("Ítems cortesía", f"{kpis['items_cortesia']:.0f}")
     except Exception as exc:
         st.error(f"Error calculando KPIs: {exc}")
         _maybe_render_sql_debug(exc)

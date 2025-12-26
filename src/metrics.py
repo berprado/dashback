@@ -81,6 +81,9 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 			"total_comandas": 0,
 			"items_vendidos": 0.0,
 			"ticket_promedio": 0.0,
+			"total_cortesia": 0.0,
+			"items_cortesia": 0.0,
+			"comandas_cortesia": 0,
 		}
 
 	row = df.iloc[0].to_dict()
@@ -89,6 +92,9 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 		"total_comandas": _to_int(row.get("total_comandas")),
 		"items_vendidos": _to_float(row.get("items_vendidos")),
 		"ticket_promedio": _to_float(row.get("ticket_promedio")),
+		"total_cortesia": _to_float(row.get("total_cortesia")),
+		"items_cortesia": _to_float(row.get("items_cortesia")),
+		"comandas_cortesia": _to_int(row.get("comandas_cortesia")),
 	}
 
 
