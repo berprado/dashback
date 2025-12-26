@@ -14,6 +14,11 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 ## Ejecutar
 - `streamlit run app.py`
 
+## Documentación
+- [docs/01-flujo_inicio_dashboard.md](docs/01-flujo_inicio_dashboard.md): lógica de arranque (tiempo real vs histórico) y casos límite.
+- [docs/02-guia_dashboard_backstage.md](docs/02-guia_dashboard_backstage.md): guía técnica por etapas + definición de vistas.
+- [docs/03-evolucion_y_mejoras.md](docs/03-evolucion_y_mejoras.md): evolución y cambios implementados (fase 1).
+
 ## Funcionalidades actuales
 - **Selección de origen de datos** desde el sidebar: Local (`connections.mysql`) o Producción (`connections.mysql_prod`).
 - **Modo automático** al iniciar:
@@ -26,6 +31,10 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 - **Detalle** (últimas 500 filas) bajo demanda.
 - **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas requeridas.
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
+
+## Seguridad / Producción
+- La app está pensada para operar en **solo lectura** (consultas `SELECT`).
+- En producción, usa credenciales **read-only** siempre que sea posible.
 
 ## Estructura
 - `app.py`: entrypoint Streamlit

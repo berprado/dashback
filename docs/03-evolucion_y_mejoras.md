@@ -1,47 +1,55 @@
-# 🧭 Evolución del proyecto Dashback (Streamlit + MySQL)
+# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.52.2 + MySQL 5.6.12)
 
-Este documento resume la evolución del dashboard **Dashback**, destacando el crecimiento gradual de métricas y visualizaciones, y las optimizaciones/correcciones aplicadas para operar de forma segura tanto con una base local (sincronizada) como con una base remota (producción).
+Este documento consolida la evolución del dashboard **Dashback** durante la fase inicial, destacando el crecimiento gradual de métricas/visualizaciones, y las optimizaciones/correcciones aplicadas para operar de forma segura y consistente tanto en **local** como en **producción**.
+
+Documentos de referencia:
+- `docs/01-flujo_inicio_dashboard.md` (lógica de arranque y casos límite)
+- `docs/02-guia_dashboard_backstage.md` (guía técnica y definición de vistas)
 
 ---
 
 ## 1) Punto de partida
 
-El proyecto inicia como un dashboard base en Streamlit, con el objetivo de:
+El proyecto inicia como un dashboard operativo en Streamlit, con el objetivo de:
 
-- Conectarse a MySQL mediante **Streamlit Connections** (secrets.toml).
+- Conectarse a MySQL mediante **Streamlit Connections** (`secrets.toml`).
 - Determinar automáticamente el **contexto operativo** al abrir (tiempo real vs histórico).
-- Mostrar KPIs y visualizaciones apoyadas en las vistas `comandas_v6`, `comandas_v6_todas`, `comandas_v6_base`.
+- Mostrar KPIs y visualizaciones apoyadas en vistas ya preparadas: `comandas_v6`, `comandas_v6_todas`, `comandas_v6_base`.
 
 ---
 
 ## 2) Conexión y estructura (base del proyecto)
 
-### Conexión a MySQL con Streamlit Connections
+### 2.1 Conexión a MySQL con Streamlit Connections
 
 - Se estandarizó la conexión vía `st.connection(..., type="sql")`.
 - Se dejó `.streamlit/secrets.toml` fuera del repo (ignorado por `.gitignore`) y se mantuvo un ejemplo versionable.
+- Se priorizó que toda interacción sea **solo lectura** (SELECT) en el flujo normal.
 
-### Estructura modular
+### 2.2 Estructura modular
 
 Se consolidó una estructura clara por responsabilidades:
 
 - `app.py`: UI principal y wiring.
 - `src/db.py`: obtención de conexión (cacheada) mediante Streamlit Connections.
-- `src/query_store.py`: SQL reutilizable y helpers (construcción de filtros/WHERE).
+- `src/startup.py`: determinación de contexto operativo de arranque.
+- `src/query_store.py`: SQL reutilizable (`Q_...` y `q_...`) + helpers (`Filters`, `build_where`, `fetch_dataframe`).
 - `src/metrics.py`: capa de servicio para ejecutar consultas y retornar resultados listos para UI.
 - `src/ui/*`: layout y componentes visuales.
-- `src/startup.py`: determinación de contexto operativo de arranque.
 
 ---
 
 ## 3) Lógica de arranque (modo tiempo real vs histórico)
 
-Se implementó la lógica de arranque descrita en los documentos de referencia:
+Se implementó la lógica de arranque descrita en los documentos:
 
-- **Tiempo real** si existe operativa activa (`estado_operacion IN (22, 24)`), usando `comandas_v6`.
+- **Tiempo real** si existe operativa activa (`ope_operacion.estado='HAB'` y `estado_operacion IN (22, 24)`), usando `comandas_v6`.
 - **Histórico** si no hay operativa activa, usando `comandas_v6_todas`.
 
-Esto permitió que el dashboard abra con un contexto coherente sin que el usuario tenga que configurarlo manualmente.
+Además, se contempló el caso “operativa activa pero sin ventas aún” como estado normal (no error):
+
+- KPIs en cero.
+- Mensajes informativos en UI.
 
 ---
 
@@ -56,53 +64,48 @@ El dashboard evolucionó por etapas, incorporando información útil de forma in
 - Ítems vendidos
 - Ticket promedio
 
-### 4.2 KPIs operativos
+### 4.2 Cortesías (corrección de negocio)
+
+Se incorporaron KPIs de cortesías:
+
+- Total cortesías
+- Comandas cortesía
+- Ítems cortesía
+
+Corrección crítica: en cortesías el `sub_total` puede ser 0; el valor real “invitado” se registra en `cor_subtotal_anterior`.
+
+Por eso, el KPI de “Total cortesías” suma `COALESCE(cor_subtotal_anterior, sub_total, 0)` cuando `tipo_salida = 'CORTESIA'`.
+
+### 4.3 Estado operativo (operación / impresión)
 
 - Comandas pendientes
 - Comandas no impresas
 
-Además, se incorporó un módulo opcional para ver:
+Y bajo demanda (para evitar carga innecesaria):
 
 - IDs de comandas pendientes
 - IDs de comandas no impresas
 
-con control de carga (checkbox) y límite configurable para evitar consultas costosas.
+con control de carga (checkbox) y límite configurable.
 
-### 4.3 Gráficos
+### 4.4 Gráficos
 
 - Ventas por hora
 - Ventas por categoría
 - Top productos
 - Ventas por usuario
 
-### 4.4 Detalle bajo demanda
+### 4.5 Detalle bajo demanda
 
-Se agregó una tabla de **detalle** (últimas 500 filas) dentro de un expander. Para rendimiento y experiencia de uso:
+Se agregó una tabla de **detalle** (últimas 500 filas) dentro de un expander.
 
-- El detalle **no se consulta** hasta que el usuario activa “Cargar detalle”.
-
----
-
-## 5) Cortesías: corrección de cálculo (punto crítico)
-
-Se incorporaron KPIs específicos de cortesías:
-
-- Total cortesías
-- Comandas cortesía
-- Ítems cortesía
-
-Y se corrigió el cálculo del **monto de cortesía** para reflejar la realidad de negocio:
-
-- En cortesías, `sub_total` puede ser **0**.
-- El valor “real invitado” se registra en `cor_subtotal_anterior`.
-
-Por ello, el KPI suma `COALESCE(cor_subtotal_anterior, sub_total, 0)` cuando `tipo_salida = 'CORTESIA'`.
+Optimización: el detalle no se consulta hasta que el usuario activa “Cargar detalle”.
 
 ---
 
-## 6) Selección de entorno: Local vs Producción
+## 5) Selección de entorno: Local vs Producción
 
-Se habilitó la capacidad de elegir el origen de datos desde el sidebar:
+Se habilitó elegir el origen de datos desde el sidebar:
 
 - **Local** (`connections.mysql`)
 - **Producción** (`connections.mysql_prod`)
@@ -111,14 +114,27 @@ Esto permite alternar entre la DB local sincronizada (por ejemplo con dbForge) y
 
 ---
 
-## 7) Compatibilidad con distintos esquemas (adminerp_copy vs adminerp)
+## 6) Compatibilidad con distintos esquemas (adminerp_copy vs adminerp)
 
 Se corrigió un punto clave para despliegue:
 
 - En desarrollo local, las vistas viven en `adminerp_copy`.
 - En producción, viven en `adminerp`.
 
-Para evitar hardcodear el esquema, las queries y nombres de vista se volvieron **independientes del esquema**, usando tablas/vistas no calificadas (por ejemplo `comandas_v6`) y confiando en que la DB activa viene definida por la URL de conexión.
+Para evitar hardcodear el esquema:
+
+- Las queries y vistas se volvieron independientes del esquema usando nombres no calificados (ej. `comandas_v6`).
+- La DB activa se determina por el `DATABASE()` definido en la URL de conexión.
+
+---
+
+## 7) Compatibilidad técnica: placeholders SQL y Streamlit
+
+Se estandarizó el uso de placeholders estilo SQLAlchemy (`:param`) para funcionar correctamente con Streamlit Connections.
+
+Cuando aplica (ruta alternativa con `mysql.connector`), se convierte a `%(param)s`.
+
+También se actualizó la UI para usar `width="stretch"` en tablas/gráficos en lugar de opciones deprecadas.
 
 ---
 
@@ -126,42 +142,46 @@ Para evitar hardcodear el esquema, las queries y nombres de vista se volvieron *
 
 Se fortaleció la validación de conexión con un healthcheck que:
 
-- Confirma DB activa (`DATABASE()`).
+- Confirma la DB activa (`DATABASE()`).
 - Verifica la existencia de vistas requeridas (`comandas_v6`, `comandas_v6_todas`, `comandas_v6_base`).
 
-También se agregó un modo de depuración controlado:
+Diagnóstico controlado:
 
 - Checkbox “Mostrar SQL/params en errores”.
-- Si una consulta falla, se muestran el SQL y parámetros, facilitando diagnóstico sin exponer secretos.
+- Si una consulta falla, se muestran SQL y parámetros, facilitando diagnóstico sin exponer secretos.
 
 ---
 
-## 9) Seguridad de configuración
+## 9) Rendimiento y UX
 
-Se sanitizó el archivo `secrets.toml.example` para que sea **seguro de versionar**, usando placeholders y evitando publicar hosts/credenciales.
+- Se evitó polling/auto-refresh continuo; se dejó un refresco manual en modo tiempo real.
+- Se cargan recursos pesados (detalle e IDs) solo bajo demanda.
 
 ---
 
-## 10) Estado actual
+## 10) Seguridad de configuración
+
+- Se sanitizó `secrets.toml.example` para que sea seguro de versionar (placeholders y sin hosts/credenciales reales).
+- Recomendación operativa: credenciales de producción **solo lectura**.
+
+---
+
+## 11) Estado actual
 
 El dashboard hoy permite:
 
 - Elegir entorno (Local/Producción).
-- Determinar modo (Tiempo real / Histórico) y filtrar histórico por:
-  - rango de operativas
-  - rango de fechas
-- Consultar KPIs, KPIs operativos, cortesías, gráficos y detalle bajo demanda.
-- Ver IDs de comandas pendientes/no impresas cuando se requiere.
+- Determinar modo (Tiempo real / Histórico) y filtrar histórico por rango de operativas o por fechas.
+- Consultar KPIs, cortesías, estado operativo, gráficos y detalle bajo demanda.
+- Validar conexión y vistas desde el healthcheck.
 
 ---
 
-## 11) Próximas ideas (no implementadas aún)
-
-Algunas mejoras candidatas para fases posteriores:
+## 12) Próximas ideas (no implementadas aún)
 
 - Prefacturación (facturado vs no facturado).
 - Exportación de detalle (CSV/Excel) bajo demanda.
-- Autenticación/roles (especialmente si se expone públicamente).
 - Cache con TTL por bloque para reducir carga en producción.
-- Indicadores adicionales: anuladas, procesadas, comparación por turno/hora, etc.
+- Autenticación/roles si el dashboard se expone fuera de red interna.
+- Más KPIs operativos: anuladas, procesadas, comparativos por hora/turno.
 
