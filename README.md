@@ -25,9 +25,10 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
    - *Tiempo real* (operativa activa) usando `comandas_v6`.
    - *Histórico* usando `comandas_v6_todas`, con filtros por **rango de operativas** o **rango de fechas**.
 - **KPIs**: total vendido, comandas, ítems, ticket promedio.
+- **Actividad (tiempo real / histórico)**: última comanda, minutos desde la última, y ritmo de emisión (mediana entre comandas para últimas 10 y para el rango completo).
 - **Cortesías**: total cortesías (usa `cor_subtotal_anterior` cuando aplica), comandas cortesía e ítems cortesía.
 - **Estado operativo**: comandas pendientes y no impresas, con opción para ver IDs (con límite).
-- **Gráficos**: ventas por hora, por categoría, top productos, ventas por usuario.
+- **Gráficos (2 columnas)**: ventas por hora, por categoría, top productos, ventas por usuario.
 - **Detalle** (últimas 500 filas) bajo demanda.
 - **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas requeridas.
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
@@ -46,6 +47,7 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 ## Próximas versiones (ideas)
 - Prefacturación (facturado vs no facturado).
 - Exportación de detalle (CSV/Excel) bajo demanda.
+- Sparklines/tendencias en KPIs usando `st.metric(..., chart_data=...)`.
 - Cache con TTL por bloque (para reducir carga en producción).
 - Autenticación/roles si el dashboard se expone fuera de red interna.
 - Más KPIs operativos (anuladas, procesadas, comparativos por hora/turno).

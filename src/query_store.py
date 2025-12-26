@@ -303,6 +303,45 @@ def q_detalle(view_name: str, where_sql: str, limit: int = 500) -> str:
         """
 
 
+def q_comandas_emision_times(view_name: str, where_sql: str, *, limit: int | None = None) -> str:
+        """Timestamps de emisión por comanda (una fila por id_comanda).
+
+        Nota: la vista contiene múltiples filas por comanda (ítems). Para medir cadencia de emisión,
+        necesitamos un timestamp único por comanda; se usa MIN(fecha_emision) por id_comanda.
+
+        - Si `limit` es None: devuelve todas las comandas del rango/operativa.
+        - Si `limit` está definido: devuelve las últimas N comandas (por fecha_emision desc).
+        """
+
+        if limit is None:
+                return f"""
+                SELECT
+                    id_comanda,
+                    MIN(fecha_emision) AS fecha_emision
+                FROM {view_name}
+                {where_sql}
+                GROUP BY id_comanda
+                ORDER BY fecha_emision ASC;
+                """
+
+        return f"""
+        SELECT
+            id_comanda,
+            fecha_emision
+        FROM (
+            SELECT
+                id_comanda,
+                MIN(fecha_emision) AS fecha_emision
+            FROM {view_name}
+            {where_sql}
+            GROUP BY id_comanda
+            ORDER BY fecha_emision DESC
+            LIMIT {int(limit)}
+        ) t
+        ORDER BY fecha_emision ASC;
+        """
+
+
 def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
     """Ejecuta un SELECT y devuelve el resultado como DataFrame.
 

@@ -24,6 +24,11 @@
 ## KPIs/negocio (detalle crítico)
 - Cortesías: el monto usa `cor_subtotal_anterior` cuando `tipo_salida='CORTESIA'` (porque `sub_total` puede ser 0).
 
+## Actividad (fecha_emision)
+- El bloque “Actividad” calcula última comanda, minutos desde la última y ritmo (mediana entre comandas).
+- SQL: `q_comandas_emision_times(...)` en `src/query_store.py` (1 fila por `id_comanda` con `MIN(fecha_emision)`).
+- Servicio: `get_actividad_emision_comandas(..., recent_n=10)` en `src/metrics.py`.
+
 ## Workflows para dev/debug
 - Ejecutar: `streamlit run app.py`.
 - Ejecutar (auto-reload al guardar): `streamlit run app.py --server.runOnSave true`.

@@ -9,10 +9,15 @@
 
 ### Tecnologías
 - **Python 3.10+**
-- **Streamlit 1.52.0**
+- **Streamlit 1.52.2**
 - **MySQL 5.6.12**
-- Driver MySQL (recomendado): `mysql-connector-python` o `pymysql`
-- Pandas para lectura y agregación (opcional, pero práctico)
+- Driver MySQL (recomendado): `mysql-connector-python`
+- SQLAlchemy (requerido por Streamlit Connections para el `url`)
+- Pandas para lectura y agregación
+
+### Nota de entornos (Local vs Producción)
+- Las vistas pueden vivir en esquemas distintos (p.ej. `adminerp_copy` en local y `adminerp` en producción).
+- En el código Python, evitar hardcodear el esquema: usar nombres no calificados (ej. `comandas_v6`) y depender de la DB definida en la URL.
 
 ### Convenciones de negocio (importantes)
 - `bar_comanda.estado` es el **estado lógico** del registro (`HAB` / `DES`).  
@@ -176,7 +181,9 @@ dashboard/
 - Reusar la misma lógica de filtros para **tiempo real** y **histórico**
 - Minimizar errores por “filtro olvidado”
 
-### 3.2 `query_store.py` (plantilla lista)
+### 3.2 `query_store.py` (patrón del repo)
+
+En este proyecto se usa **Streamlit Connections**, por lo que la parametrización recomendada es estilo SQLAlchemy: `:param`.
 
 ```python
 # src/query_store.py
@@ -215,14 +222,14 @@ def build_where(f: Filters, mode: str) -> Tuple[str, Dict[str, Any]]:
     if mode == "ops":
         if f.op_ini is None or f.op_fin is None:
             raise ValueError("mode='ops' requiere op_ini y op_fin")
-        clauses.append("id_operacion BETWEEN %(op_ini)s AND %(op_fin)s")
-        params["op_ini"] = f.op_ini
-        params["op_fin"] = f.op_fin
+      clauses.append("id_operacion BETWEEN :op_ini AND :op_fin")
+      params["op_ini"] = int(f.op_ini)
+      params["op_fin"] = int(f.op_fin)
 
     elif mode == "dates":
         if f.dt_ini is None or f.dt_fin is None:
             raise ValueError("mode='dates' requiere dt_ini y dt_fin")
-        clauses.append("fecha_emision BETWEEN %(dt_ini)s AND %(dt_fin)s")
+      clauses.append("fecha_emision BETWEEN :dt_ini AND :dt_fin")
         params["dt_ini"] = f.dt_ini
         params["dt_fin"] = f.dt_fin
 
@@ -231,31 +238,7 @@ def build_where(f: Filters, mode: str) -> Tuple[str, Dict[str, Any]]:
     else:
         raise ValueError("mode inválido: use 'ops'|'dates'|'none'")
 
-    # Filtros opcionales
-    if f.id_barra is not None:
-        clauses.append("id_barra = %(id_barra)s")
-        params["id_barra"] = f.id_barra
-
-    if f.categoria:
-        clauses.append("categoria = %(categoria)s")
-        params["categoria"] = f.categoria
-
-    if f.usuario:
-        clauses.append("usuario_reg = %(usuario)s")
-        params["usuario"] = f.usuario
-
-    if f.estado_comanda:
-        clauses.append("estado_comanda = %(estado_comanda)s")
-        params["estado_comanda"] = f.estado_comanda
-
-    # Nota: filtrar NULL explícito requiere un flag aparte.
-    if f.estado_impresion:
-        clauses.append("estado_impresion = %(estado_impresion)s")
-        params["estado_impresion"] = f.estado_impresion
-
-    if f.tipo_salida:
-        clauses.append("tipo_salida = %(tipo_salida)s")
-        params["tipo_salida"] = f.tipo_salida
+    # Nota: el repo hoy utiliza principalmente filtros por operativa o por fechas.
 
     where_sql = ""
     if clauses:
@@ -275,7 +258,7 @@ def q_kpis(view_name: str, where_sql: str) -> str:
       COUNT(DISTINCT CASE WHEN estado_comanda = 'PENDIENTE' THEN id_comanda END) AS comandas_pendientes,
       COUNT(DISTINCT CASE WHEN (estado_impresion IS NULL OR estado_impresion <> 'IMPRESO') THEN id_comanda END) AS comandas_no_impresas,
 
-      SUM(CASE WHEN tipo_salida = 'CORTESIA' THEN sub_total ELSE 0 END) AS monto_cortesia,
+      SUM(CASE WHEN tipo_salida = 'CORTESIA' THEN COALESCE(cor_subtotal_anterior, sub_total, 0) ELSE 0 END) AS monto_cortesia,
       COUNT(DISTINCT CASE WHEN tipo_salida = 'CORTESIA' THEN id_comanda END) AS comandas_cortesia,
 
       SUM(CASE WHEN estado_comanda = 'ANULADO' THEN sub_total ELSE 0 END) AS monto_anulado,
@@ -438,23 +421,28 @@ def get_dashboard_data(view_name: str, f: Filters, mode: str):
 ## 4) Etapa 4 — Implementación Streamlit (layout por secciones)
 
 ### 4.1 Modos de operación
-- **Tiempo real:** vista `adminerp_copy.comandas_v6` con `mode='none'`
-- **Histórico por operativas:** vista `adminerp_copy.comandas_v6_todas` con `mode='ops'`
-- **Histórico por fechas:** vista `adminerp_copy.comandas_v6_todas` con `mode='dates'`
+- **Tiempo real:** vista `comandas_v6` con `mode='none'`
+- **Histórico por operativas:** vista `comandas_v6_todas` con `mode='ops'`
+- **Histórico por fechas:** vista `comandas_v6_todas` con `mode='dates'`
 
 ### 4.2 Orden recomendado del layout
 1. Filtros (sidebar o top)
 2. KPIs
-3. Estado operativo (comandas + impresión)
-4. Ventas por hora
-5. Ventas por categoría + Top productos
-6. Ventas por usuario + ventas por mesa (opcional)
-7. Pre-facturación
-8. Tabla detalle + export
+3. Actividad (última comanda / minutos desde última / ritmo de emisión)
+4. Cortesías (KPIs)
+5. Estado operativo (comandas + impresión) + IDs bajo demanda
+6. Gráficos en 2 columnas:
+  - Ventas por hora | Ventas por categoría
+  - Top productos   | Ventas por usuario
+7. Tabla detalle bajo demanda
 
 ### 4.3 Controles de rendimiento
 - No cargar detalle si el usuario no lo solicita (tabs/expander).
-- Para tiempo real: refresco controlado (por ejemplo cada 10–30s).
+- No cargar IDs (pendientes/no impresas) si el usuario no lo solicita.
+- Para tiempo real: refresco manual (botón “Actualizar”).
+
+### 4.4 Presentación de métricas
+- Para un look tipo dashboard, usar `st.metric(..., border=True)`.
 
 ---
 
@@ -488,8 +476,8 @@ SELECT
   op.nombre_operacion,
   op.estado_operacion,
   eop.nombre AS estado_operacion_nombre
-FROM adminerp_copy.ope_operacion op
-LEFT JOIN adminerp_copy.parameter_table eop
+FROM ope_operacion op
+LEFT JOIN parameter_table eop
   ON eop.id = op.estado_operacion
  AND eop.id_master = 6
  AND eop.estado = 'HAB'

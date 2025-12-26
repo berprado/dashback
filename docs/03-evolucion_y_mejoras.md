@@ -95,7 +95,22 @@ con control de carga (checkbox) y límite configurable.
 - Top productos
 - Ventas por usuario
 
-### 4.5 Detalle bajo demanda
+Presentación:
+- Los gráficos se organizan en 2 filas de 2 columnas para comparación lado a lado.
+
+### 4.5 Actividad (ritmo de emisión)
+
+Se agregó un bloque de “Actividad” basado en `fecha_emision` para medir el pulso operativo:
+
+- Hora de la última comanda (MAX `fecha_emision`).
+- Minutos desde la última comanda.
+- Ritmo de emisión (mediana de minutos entre comandas consecutivas):
+	- últimas 10 comandas
+	- operativa/rango completo
+
+Nota: el cálculo es por comanda (`id_comanda`), no por ítem.
+
+### 4.6 Detalle bajo demanda
 
 Se agregó una tabla de **detalle** (últimas 500 filas) dentro de un expander.
 
@@ -173,6 +188,7 @@ El dashboard hoy permite:
 - Elegir entorno (Local/Producción).
 - Determinar modo (Tiempo real / Histórico) y filtrar histórico por rango de operativas o por fechas.
 - Consultar KPIs, cortesías, estado operativo, gráficos y detalle bajo demanda.
+- Consultar actividad (última comanda / minutos desde última / ritmo de emisión).
 - Validar conexión y vistas desde el healthcheck.
 
 ---
@@ -181,6 +197,7 @@ El dashboard hoy permite:
 
 - Prefacturación (facturado vs no facturado).
 - Exportación de detalle (CSV/Excel) bajo demanda.
+- Sparklines/tendencias en KPIs usando `st.metric(..., chart_data=...)`.
 - Cache con TTL por bloque para reducir carga en producción.
 - Autenticación/roles si el dashboard se expone fuera de red interna.
 - Más KPIs operativos: anuladas, procesadas, comparativos por hora/turno.

@@ -6,6 +6,7 @@ from src.query_store import (
 	Filters,
 	build_where,
 	fetch_dataframe,
+	q_comandas_emision_times,
 	q_ids_comandas_no_impresas,
 	q_ids_comandas_pendientes,
 	q_detalle,
@@ -229,3 +230,107 @@ def get_detalle(
 	where_sql, params = build_where(filters, mode)
 	sql = q_detalle(view_name, where_sql, limit=limit)
 	return _run_df(conn, sql, params, context="Error ejecutando detalle")
+
+
+def _median_minutes_between(series) -> tuple[float | None, int]:
+	"""Devuelve (mediana_en_minutos, cantidad_de_intervalos)."""
+	if series is None:
+		return None, 0
+	try:
+		import pandas as pd
+	except Exception:
+		return None, 0
+
+	dt = pd.to_datetime(series, errors="coerce")
+	dt = dt.dropna()
+	if len(dt) < 2:
+		return None, 0
+
+	deltas = dt.diff().dropna()
+	if deltas.empty:
+		return None, 0
+
+	minutes = deltas.dt.total_seconds() / 60.0
+	minutes = minutes[minutes >= 0]
+	if minutes.empty:
+		return None, 0
+
+	try:
+		median_val = float(minutes.median())
+	except Exception:
+		median_val = None
+
+	return median_val, int(minutes.shape[0])
+
+
+def get_actividad_emision_comandas(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	recent_n: int = 10,
+) -> dict[str, Any]:
+	"""Métricas de actividad basadas en `fecha_emision`.
+
+	Calcula:
+	- Hora/fecha de última comanda (MAX fecha_emision)
+	- Minutos desde la última comanda (vs reloj del servidor Streamlit)
+	- Mediana de minutos entre comandas (últimas N)
+	- Mediana de minutos entre comandas (todo el rango/operativa)
+
+	Nota: Se calcula por comanda (id_comanda), no por ítem.
+	"""
+
+	where_sql, params = build_where(filters, mode)
+
+	# Últimas N comandas (ordenadas asc para poder hacer diff).
+	recent_df = _run_df(
+		conn,
+		q_comandas_emision_times(view_name, where_sql, limit=int(recent_n)),
+		params,
+		context="Error obteniendo timestamps de emisión (últimas comandas)",
+	)
+
+	# Todas las comandas del contexto (para ritmo global).
+	all_df = _run_df(
+		conn,
+		q_comandas_emision_times(view_name, where_sql, limit=None),
+		params,
+		context="Error obteniendo timestamps de emisión (todas las comandas)",
+	)
+
+	last_ts = None
+	minutes_since_last = None
+
+	try:
+		import pandas as pd
+		if recent_df is not None and not recent_df.empty and "fecha_emision" in recent_df.columns:
+			last_ts = pd.to_datetime(recent_df["fecha_emision"].max(), errors="coerce")
+			if pd.notna(last_ts):
+				now = pd.Timestamp.now()
+				delta = now - last_ts
+				minutes_since_last = float(delta.total_seconds() / 60.0)
+			else:
+				last_ts = None
+				minutes_since_last = None
+	except Exception:
+		last_ts = None
+		minutes_since_last = None
+
+	recent_median_min, recent_intervals = _median_minutes_between(
+		recent_df["fecha_emision"] if recent_df is not None and "fecha_emision" in getattr(recent_df, "columns", []) else None
+	)
+	all_median_min, all_intervals = _median_minutes_between(
+		all_df["fecha_emision"] if all_df is not None and "fecha_emision" in getattr(all_df, "columns", []) else None
+	)
+
+	return {
+		"last_ts": last_ts,
+		"minutes_since_last": minutes_since_last,
+		"recent_median_min": recent_median_min,
+		"recent_intervals": recent_intervals,
+		"all_median_min": all_median_min,
+		"all_intervals": all_intervals,
+		"recent_n": int(recent_n),
+	}

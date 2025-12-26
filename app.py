@@ -5,6 +5,7 @@ import streamlit as st
 from src.db import get_connection
 from src.metrics import (
     QueryExecutionError,
+    get_actividad_emision_comandas,
     get_detalle,
     get_estado_operativo,
     get_ids_comandas_no_impresas,
@@ -177,15 +178,116 @@ else:
     try:
         kpis = get_kpis(conn, startup.view_name, filters, mode_for_metrics)
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total vendido", f"{kpis['total_vendido']:.2f}")
-        c2.metric("Comandas", f"{kpis['total_comandas']}")
-        c3.metric("Ítems", f"{kpis['items_vendidos']:.0f}")
-        c4.metric("Ticket promedio", f"{kpis['ticket_promedio']:.2f}")
+        c1.metric(
+            "Total vendido",
+            f"{kpis['total_vendido']:.2f}",
+            help="Suma de sub_total (ventas) en el rango/vista seleccionada.",
+            border=True,
+        )
+        c2.metric(
+            "Comandas",
+            f"{kpis['total_comandas']}",
+            help="Cantidad de comandas distintas (COUNT DISTINCT id_comanda).",
+            border=True,
+        )
+        c3.metric(
+            "Ítems",
+            f"{kpis['items_vendidos']:.0f}",
+            help="Suma de cantidades (SUM cantidad).",
+            border=True,
+        )
+        c4.metric(
+            "Ticket promedio",
+            f"{kpis['ticket_promedio']:.2f}",
+            help="Total vendido / comandas (redondeado).",
+            border=True,
+        )
+
+        try:
+            act = get_actividad_emision_comandas(
+                conn,
+                startup.view_name,
+                filters,
+                mode_for_metrics,
+                recent_n=10,
+            )
+
+            last_ts = act.get("last_ts")
+            last_ts_txt = None
+            try:
+                if last_ts is not None:
+                    last_ts_txt = last_ts.strftime("%H:%M:%S")
+            except Exception:
+                last_ts_txt = None
+
+            minutes_since_last = act.get("minutes_since_last")
+            minutes_since_txt = None
+            try:
+                if minutes_since_last is not None:
+                    minutes_since_txt = f"{float(minutes_since_last):.0f}"
+            except Exception:
+                minutes_since_txt = None
+
+            recent_median = act.get("recent_median_min")
+            all_median = act.get("all_median_min")
+            recent_n = act.get("recent_n")
+            recent_intervals = act.get("recent_intervals")
+            all_intervals = act.get("all_intervals")
+
+            a1, a2, a3, a4 = st.columns(4)
+            a1.metric(
+                "Última comanda",
+                last_ts_txt,
+                help="Hora (MAX fecha_emision) de la última comanda emitida en el contexto actual.",
+                border=True,
+            )
+            a2.metric(
+                "Min desde última",
+                minutes_since_txt,
+                help="Minutos transcurridos desde la última comanda (según reloj del servidor).",
+                border=True,
+            )
+            a3.metric(
+                f"Ritmo (últimas {int(recent_n or 10)})",
+                (f"{float(recent_median):.1f} min" if recent_median is not None else None),
+                help=(
+                    "Mediana de minutos entre comandas consecutivas (por id_comanda). "
+                    + (f"Intervalos usados: {int(recent_intervals or 0)}.")
+                ),
+                border=True,
+            )
+            a4.metric(
+                "Ritmo (operativa/rango)",
+                (f"{float(all_median):.1f} min" if all_median is not None else None),
+                help=(
+                    "Mediana de minutos entre comandas consecutivas en todo el contexto actual. "
+                    + (f"Intervalos usados: {int(all_intervals or 0)}.")
+                ),
+                border=True,
+            )
+        except Exception as exc:
+            st.warning(f"No se pudo calcular actividad: {exc}")
+            _maybe_render_sql_debug(exc)
 
         k1, k2, k3 = st.columns(3)
-        k1.metric("Total cortesías", f"{kpis['total_cortesia']:.2f}")
-        k2.metric("Comandas cortesía", f"{kpis['comandas_cortesia']}")
-        k3.metric("Ítems cortesía", f"{kpis['items_cortesia']:.0f}")
+        k1.metric(
+            "Total cortesías",
+            f"{kpis['total_cortesia']:.2f}",
+            help="Para tipo_salida=CORTESIA usa cor_subtotal_anterior cuando aplica.",
+            border=True,
+        )
+        k2.metric(
+            "Comandas cortesía",
+            f"{kpis['comandas_cortesia']}",
+            help="Cantidad de comandas con tipo_salida=CORTESIA.",
+            border=True,
+        )
+        k3.metric(
+            "Ítems cortesía",
+            f"{kpis['items_cortesia']:.0f}",
+            help="Suma de cantidad donde tipo_salida=CORTESIA.",
+            border=True,
+        )
     except Exception as exc:
         st.error(f"Error calculando KPIs: {exc}")
         _maybe_render_sql_debug(exc)
@@ -197,8 +299,18 @@ else:
     try:
         estado = get_estado_operativo(conn, startup.view_name, filters, mode_for_metrics)
         e1, e2 = st.columns(2)
-        e1.metric("Comandas pendientes", f"{estado['comandas_pendientes']}")
-        e2.metric("Comandas no impresas", f"{estado['comandas_no_impresas']}")
+        e1.metric(
+            "Comandas pendientes",
+            f"{estado['comandas_pendientes']}",
+            help="COUNT DISTINCT id_comanda con estado_comanda='PENDIENTE'.",
+            border=True,
+        )
+        e2.metric(
+            "Comandas no impresas",
+            f"{estado['comandas_no_impresas']}",
+            help="COUNT DISTINCT id_comanda donde estado_impresion es NULL o <> 'IMPRESO'.",
+            border=True,
+        )
 
         with st.expander("Ver IDs de comandas (pendientes / no impresas)", expanded=False):
             cargar_ids = st.checkbox("Cargar IDs", value=False, key="estado_operativo_load_ids")
@@ -231,68 +343,76 @@ else:
         st.error(f"Error cargando estado operativo: {exc}")
         _maybe_render_sql_debug(exc)
 
-st.subheader("Ventas por hora")
-if conn is None or startup is None:
-    st.info("Conecta a la base de datos para ver ventas por hora.")
-else:
-    try:
-        por_hora = get_ventas_por_hora(conn, startup.view_name, filters, mode_for_metrics)
-        if por_hora is None or por_hora.empty:
-            if startup.mode == "realtime" and not startup.has_rows:
-                st.info("Aún no se registraron ventas en esta operativa.")
+g1, g2 = st.columns(2)
+
+with g1:
+    st.subheader("Ventas por hora")
+    if conn is None or startup is None:
+        st.info("Conecta a la base de datos para ver ventas por hora.")
+    else:
+        try:
+            por_hora = get_ventas_por_hora(conn, startup.view_name, filters, mode_for_metrics)
+            if por_hora is None or por_hora.empty:
+                if startup.mode == "realtime" and not startup.has_rows:
+                    st.info("Aún no se registraron ventas en esta operativa.")
+                else:
+                    st.info("Sin datos para el rango seleccionado.")
             else:
+                fig = bar_chart(por_hora, x="hora", y="total_vendido", title=None)
+                st.plotly_chart(fig, width="stretch")
+        except Exception as exc:
+            st.error(f"Error cargando ventas por hora: {exc}")
+            _maybe_render_sql_debug(exc)
+
+with g2:
+    st.subheader("Ventas por categoría")
+    if conn is None or startup is None:
+        st.info("Conecta a la base de datos para ver ventas por categoría.")
+    else:
+        try:
+            por_categoria = get_ventas_por_categoria(conn, startup.view_name, filters, mode_for_metrics)
+            if por_categoria is None or por_categoria.empty:
                 st.info("Sin datos para el rango seleccionado.")
-        else:
-            fig = bar_chart(por_hora, x="hora", y="total_vendido", title=None)
-            st.plotly_chart(fig, width="stretch")
-    except Exception as exc:
-        st.error(f"Error cargando ventas por hora: {exc}")
-        _maybe_render_sql_debug(exc)
+            else:
+                fig = bar_chart(por_categoria, x="categoria", y="total_vendido", title=None)
+                st.plotly_chart(fig, width="stretch")
+        except Exception as exc:
+            st.error(f"Error cargando ventas por categoría: {exc}")
+            _maybe_render_sql_debug(exc)
 
-st.subheader("Ventas por categoría")
-if conn is None or startup is None:
-    st.info("Conecta a la base de datos para ver ventas por categoría.")
-else:
-    try:
-        por_categoria = get_ventas_por_categoria(conn, startup.view_name, filters, mode_for_metrics)
-        if por_categoria is None or por_categoria.empty:
-            st.info("Sin datos para el rango seleccionado.")
-        else:
-            fig = bar_chart(por_categoria, x="categoria", y="total_vendido", title=None)
-            st.plotly_chart(fig, width="stretch")
-    except Exception as exc:
-        st.error(f"Error cargando ventas por categoría: {exc}")
-        _maybe_render_sql_debug(exc)
+g3, g4 = st.columns(2)
 
-st.subheader("Top productos")
-if conn is None or startup is None:
-    st.info("Conecta a la base de datos para ver top productos.")
-else:
-    try:
-        top = get_top_productos(conn, startup.view_name, filters, mode_for_metrics, limit=20)
-        if top is None or top.empty:
-            st.info("Sin datos para el rango seleccionado.")
-        else:
-            fig = bar_chart(top, x="total_vendido", y="nombre", title=None, orientation="h")
-            st.plotly_chart(fig, width="stretch")
-    except Exception as exc:
-        st.error(f"Error cargando top productos: {exc}")
-        _maybe_render_sql_debug(exc)
+with g3:
+    st.subheader("Top productos")
+    if conn is None or startup is None:
+        st.info("Conecta a la base de datos para ver top productos.")
+    else:
+        try:
+            top = get_top_productos(conn, startup.view_name, filters, mode_for_metrics, limit=20)
+            if top is None or top.empty:
+                st.info("Sin datos para el rango seleccionado.")
+            else:
+                fig = bar_chart(top, x="total_vendido", y="nombre", title=None, orientation="h")
+                st.plotly_chart(fig, width="stretch")
+        except Exception as exc:
+            st.error(f"Error cargando top productos: {exc}")
+            _maybe_render_sql_debug(exc)
 
-st.subheader("Ventas por usuario")
-if conn is None or startup is None:
-    st.info("Conecta a la base de datos para ver ventas por usuario.")
-else:
-    try:
-        por_usuario = get_ventas_por_usuario(conn, startup.view_name, filters, mode_for_metrics, limit=20)
-        if por_usuario is None or por_usuario.empty:
-            st.info("Sin datos para el rango seleccionado.")
-        else:
-            fig = bar_chart(por_usuario, x="total_vendido", y="usuario_reg", title=None, orientation="h")
-            st.plotly_chart(fig, width="stretch")
-    except Exception as exc:
-        st.error(f"Error cargando ventas por usuario: {exc}")
-        _maybe_render_sql_debug(exc)
+with g4:
+    st.subheader("Ventas por usuario")
+    if conn is None or startup is None:
+        st.info("Conecta a la base de datos para ver ventas por usuario.")
+    else:
+        try:
+            por_usuario = get_ventas_por_usuario(conn, startup.view_name, filters, mode_for_metrics, limit=20)
+            if por_usuario is None or por_usuario.empty:
+                st.info("Sin datos para el rango seleccionado.")
+            else:
+                fig = bar_chart(por_usuario, x="total_vendido", y="usuario_reg", title=None, orientation="h")
+                st.plotly_chart(fig, width="stretch")
+        except Exception as exc:
+            st.error(f"Error cargando ventas por usuario: {exc}")
+            _maybe_render_sql_debug(exc)
 
 st.subheader("Detalle")
 if conn is None or startup is None:
