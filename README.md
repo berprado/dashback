@@ -29,11 +29,13 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
    - *Tiempo real* (operativa activa) usando `comandas_v6`.
    - *Histórico* usando `comandas_v6_todas`, con filtros por **rango de operativas** o **rango de fechas**.
 - **KPIs**: total vendido, comandas, ítems, ticket promedio.
+- **Formato Bolivia (moneda)**: montos en `Bs 1.100,33` (miles con punto, decimales con coma) y conteos en `1.100`.
 - **Actividad (tiempo real / histórico)**: última comanda, minutos desde la última, y ritmo de emisión (mediana entre comandas para últimas 10 y para el rango completo).
 - **Cortesías**: total cortesías (usa `cor_subtotal_anterior` cuando aplica), comandas cortesía e ítems cortesía.
 - **Estado operativo**: comandas pendientes y no impresas, con opción para ver IDs (con límite).
 - **Gráficos (2 columnas)**: ventas por hora, por categoría, top productos, ventas por usuario.
 - **Detalle** (últimas 500 filas) bajo demanda.
+   - Nota: las columnas monetarias del detalle se formatean como texto para asegurar consistencia visual; por eso, si ordenas esas columnas, el orden puede ser **lexicográfico** (texto) en lugar de numérico.
 - **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas requeridas.
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
 

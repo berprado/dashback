@@ -19,6 +19,7 @@ from src.metrics import (
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.components import bar_chart
+from src.ui.formatting import format_bs, format_detalle_df, format_int
 from src.ui.layout import render_page_header, render_sidebar_connection_section
 
 
@@ -180,25 +181,25 @@ else:
         c1, c2, c3, c4 = st.columns(4)
         c1.metric(
             "Total vendido",
-            f"{kpis['total_vendido']:.2f}",
+            format_bs(kpis["total_vendido"]),
             help="Suma de sub_total (ventas) en el rango/vista seleccionada.",
             border=True,
         )
         c2.metric(
             "Comandas",
-            f"{kpis['total_comandas']}",
+            format_int(kpis["total_comandas"]),
             help="Cantidad de comandas distintas (COUNT DISTINCT id_comanda).",
             border=True,
         )
         c3.metric(
             "Ítems",
-            f"{kpis['items_vendidos']:.0f}",
+            format_int(kpis["items_vendidos"]),
             help="Suma de cantidades (SUM cantidad).",
             border=True,
         )
         c4.metric(
             "Ticket promedio",
-            f"{kpis['ticket_promedio']:.2f}",
+            format_bs(kpis["ticket_promedio"]),
             help="Total vendido / comandas (redondeado).",
             border=True,
         )
@@ -272,19 +273,19 @@ else:
         k1, k2, k3 = st.columns(3)
         k1.metric(
             "Total cortesías",
-            f"{kpis['total_cortesia']:.2f}",
+            format_bs(kpis["total_cortesia"]),
             help="Para tipo_salida=CORTESIA usa cor_subtotal_anterior cuando aplica.",
             border=True,
         )
         k2.metric(
             "Comandas cortesía",
-            f"{kpis['comandas_cortesia']}",
+            format_int(kpis["comandas_cortesia"]),
             help="Cantidad de comandas con tipo_salida=CORTESIA.",
             border=True,
         )
         k3.metric(
             "Ítems cortesía",
-            f"{kpis['items_cortesia']:.0f}",
+            format_int(kpis["items_cortesia"]),
             help="Suma de cantidad donde tipo_salida=CORTESIA.",
             border=True,
         )
@@ -301,13 +302,13 @@ else:
         e1, e2 = st.columns(2)
         e1.metric(
             "Comandas pendientes",
-            f"{estado['comandas_pendientes']}",
+            format_int(estado["comandas_pendientes"]),
             help="COUNT DISTINCT id_comanda con estado_comanda='PENDIENTE'.",
             border=True,
         )
         e2.metric(
             "Comandas no impresas",
-            f"{estado['comandas_no_impresas']}",
+            format_int(estado["comandas_no_impresas"]),
             help="COUNT DISTINCT id_comanda donde estado_impresion es NULL o <> 'IMPRESO'.",
             border=True,
         )
@@ -358,7 +359,7 @@ with g1:
                 else:
                     st.info("Sin datos para el rango seleccionado.")
             else:
-                fig = bar_chart(por_hora, x="hora", y="total_vendido", title=None)
+                fig = bar_chart(por_hora, x="hora", y="total_vendido", title=None, money=True)
                 st.plotly_chart(fig, width="stretch")
         except Exception as exc:
             st.error(f"Error cargando ventas por hora: {exc}")
@@ -374,7 +375,7 @@ with g2:
             if por_categoria is None or por_categoria.empty:
                 st.info("Sin datos para el rango seleccionado.")
             else:
-                fig = bar_chart(por_categoria, x="categoria", y="total_vendido", title=None)
+                fig = bar_chart(por_categoria, x="categoria", y="total_vendido", title=None, money=True)
                 st.plotly_chart(fig, width="stretch")
         except Exception as exc:
             st.error(f"Error cargando ventas por categoría: {exc}")
@@ -392,7 +393,7 @@ with g3:
             if top is None or top.empty:
                 st.info("Sin datos para el rango seleccionado.")
             else:
-                fig = bar_chart(top, x="total_vendido", y="nombre", title=None, orientation="h")
+                fig = bar_chart(top, x="total_vendido", y="nombre", title=None, orientation="h", money=True)
                 st.plotly_chart(fig, width="stretch")
         except Exception as exc:
             st.error(f"Error cargando top productos: {exc}")
@@ -408,7 +409,7 @@ with g4:
             if por_usuario is None or por_usuario.empty:
                 st.info("Sin datos para el rango seleccionado.")
             else:
-                fig = bar_chart(por_usuario, x="total_vendido", y="usuario_reg", title=None, orientation="h")
+                fig = bar_chart(por_usuario, x="total_vendido", y="usuario_reg", title=None, orientation="h", money=True)
                 st.plotly_chart(fig, width="stretch")
         except Exception as exc:
             st.error(f"Error cargando ventas por usuario: {exc}")
@@ -426,7 +427,7 @@ else:
                 if detalle is None or detalle.empty:
                     st.info("Sin datos para el rango seleccionado.")
                 else:
-                    st.dataframe(detalle, width="stretch")
+                    st.dataframe(format_detalle_df(detalle), width="stretch")
         except Exception as exc:
             st.error(f"Error cargando detalle: {exc}")
             _maybe_render_sql_debug(exc)

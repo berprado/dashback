@@ -64,6 +64,12 @@ El dashboard evolucionó por etapas, incorporando información útil de forma in
 - Ítems vendidos
 - Ticket promedio
 
+Mejora UX aplicada:
+- Se unificó el formato de moneda y conteos para Bolivia.
+	- Dinero: `Bs 1.100,33`
+	- Conteos: `1.100`
+	- El formateo se centraliza en `src/ui/formatting.py` para evitar duplicación.
+
 ### 4.2 Cortesías (corrección de negocio)
 
 Se incorporaron KPIs de cortesías:
@@ -122,6 +128,10 @@ Interpretación rápida del “Ritmo” (importante):
 Se agregó una tabla de **detalle** (últimas 500 filas) dentro de un expander.
 
 Optimización: el detalle no se consulta hasta que el usuario activa “Cargar detalle”.
+
+Nota de formato/importante:
+- En el detalle, las columnas monetarias se muestran ya formateadas como texto (`Bs ...`) para asegurar consistencia visual.
+- Por ese motivo, al ordenar por esas columnas desde la UI, el ordenamiento puede ser **lexicográfico** (texto) y no numérico.
 
 ---
 

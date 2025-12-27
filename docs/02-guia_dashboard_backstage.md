@@ -465,6 +465,10 @@ def get_dashboard_data(view_name: str, f: Filters, mode: str):
   - Top productos   | Ventas por usuario
 7. Tabla detalle bajo demanda
 
+Nota de formato (implementación actual):
+- Para consistencia Bolivia, los montos se muestran como `Bs 1.100,33`.
+- En la tabla de detalle, las columnas monetarias pueden renderizarse como texto ya formateado; si se ordena por ellas, el orden puede ser **lexicográfico** (texto) y no numérico.
+
 ### 4.3 Controles de rendimiento
 - No cargar detalle si el usuario no lo solicita (tabs/expander).
 - No cargar IDs (pendientes/no impresas) si el usuario no lo solicita.
@@ -472,6 +476,11 @@ def get_dashboard_data(view_name: str, f: Filters, mode: str):
 
 ### 4.4 Presentación de métricas
 - Para un look tipo dashboard, usar `st.metric(..., border=True)`.
+
+Formato Bolivia (implementación actual):
+- Centralizar el formateo en `src/ui/formatting.py`.
+- Dinero: `Bs 1.100,33` (miles con punto, decimales con coma)
+- Conteos: `1.100`
 
 ---
 
