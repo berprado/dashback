@@ -85,14 +85,21 @@ Por eso, el KPI de “Total cortesías” suma `COALESCE(cor_subtotal_anterior, 
 ### 4.3 Estado operativo (operación / impresión)
 
 - Comandas pendientes
-- Comandas no impresas
+- Comandas anuladas
+- Comandas no impresas (impresión pendiente)
 
 Y bajo demanda (para evitar carga innecesaria):
 
 - IDs de comandas pendientes
 - IDs de comandas no impresas
+- IDs de comandas anuladas
 
 con control de carga (checkbox) y límite configurable.
+
+Semántica operativa (importante):
+- `estado_impresion='PENDIENTE'` es un estado temporal (en cola de impresión/procesamiento).
+- `estado_impresion=NULL` suele aparecer cuando la comanda fue anulada y es permanente.
+- Por consistencia, el KPI/IDs de “no impresas” cuentan solo `estado_impresion='PENDIENTE'` (no incluye anuladas).
 
 ### 4.4 Gráficos
 

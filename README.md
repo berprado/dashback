@@ -32,7 +32,9 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 - **Formato Bolivia (moneda)**: montos en `Bs 1.100,33` (miles con punto, decimales con coma) y conteos en `1.100`.
 - **Actividad (tiempo real / histórico)**: última comanda, minutos desde la última, y ritmo de emisión (mediana entre comandas para últimas 10 y para el rango completo).
 - **Cortesías**: total cortesías (usa `cor_subtotal_anterior` cuando aplica), comandas cortesía e ítems cortesía.
-- **Estado operativo**: comandas pendientes y no impresas, con opción para ver IDs (con límite).
+- **Estado operativo**: comandas pendientes, anuladas y no impresas, con opción para ver IDs (con límite).
+   - `estado_impresion='PENDIENTE'` es temporal (pendiente de procesar/impresión).
+   - `estado_impresion=NULL` suele indicar comanda anulada (estado permanente).
 - **Gráficos (2 columnas)**: ventas por hora, por categoría, top productos, ventas por usuario.
 - **Detalle** (últimas 500 filas) bajo demanda.
    - Nota: las columnas monetarias del detalle se formatean como texto para asegurar consistencia visual; por eso, si ordenas esas columnas, el orden puede ser **lexicográfico** (texto) en lugar de numérico.

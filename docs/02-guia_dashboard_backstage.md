@@ -48,6 +48,11 @@ Cuando haya dudas, la fuente de verdad es el código en `src/`.
 
 ---
 
+### Semántica adicional: `estado_impresion` en la práctica
+- `IMPRESO`: impresión ya procesada.
+- `PENDIENTE`: estado temporal (en cola/por procesar).
+- `NULL`: típico cuando la comanda fue **anulada** (estado permanente).
+
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 
 ### 1.1 Vista base recomendada: `comandas_v6_base`
@@ -468,6 +473,10 @@ def get_dashboard_data(view_name: str, f: Filters, mode: str):
 Nota de formato (implementación actual):
 - Para consistencia Bolivia, los montos se muestran como `Bs 1.100,33`.
 - En la tabla de detalle, las columnas monetarias pueden renderizarse como texto ya formateado; si se ordena por ellas, el orden puede ser **lexicográfico** (texto) y no numérico.
+
+Nota de estados (implementación actual):
+- El KPI/IDs de “no impresas” se calcula como `estado_impresion='PENDIENTE'`.
+- Las anuladas se identifican por `estado_comanda='ANULADO'` (y suelen tener `estado_impresion=NULL`).
 
 ### 4.3 Controles de rendimiento
 - No cargar detalle si el usuario no lo solicita (tabs/expander).

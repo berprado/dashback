@@ -179,9 +179,10 @@ def q_estado_operativo(view_name: str, where_sql: str) -> str:
         return f"""
         SELECT
             COUNT(DISTINCT CASE WHEN estado_comanda = 'PENDIENTE' THEN id_comanda END) AS comandas_pendientes,
+            COUNT(DISTINCT CASE WHEN estado_comanda = 'ANULADO' THEN id_comanda END) AS comandas_anuladas,
             COUNT(
                 DISTINCT CASE
-                    WHEN (estado_impresion IS NULL OR estado_impresion <> 'IMPRESO') THEN id_comanda
+                    WHEN estado_impresion = 'PENDIENTE' THEN id_comanda
                 END
             ) AS comandas_no_impresas
         FROM {view_name}
@@ -208,15 +209,27 @@ def q_ids_comandas_pendientes(view_name: str, where_sql: str, limit: int = 50) -
 
 
 def q_ids_comandas_no_impresas(view_name: str, where_sql: str, limit: int = 50) -> str:
-        where2 = _append_condition(where_sql, "(estado_impresion IS NULL OR estado_impresion <> 'IMPRESO')")
-        return f"""
-        SELECT DISTINCT
-            id_comanda
-        FROM {view_name}
-        {where2}
-        ORDER BY id_comanda DESC
-        LIMIT {int(limit)};
-        """
+		where2 = _append_condition(where_sql, "estado_impresion = 'PENDIENTE'")
+		return f"""
+		SELECT DISTINCT
+			id_comanda
+		FROM {view_name}
+		{where2}
+		ORDER BY id_comanda DESC
+		LIMIT {int(limit)};
+		"""
+
+
+def q_ids_comandas_anuladas(view_name: str, where_sql: str, limit: int = 50) -> str:
+		where2 = _append_condition(where_sql, "estado_comanda = 'ANULADO'")
+		return f"""
+		SELECT DISTINCT
+			id_comanda
+		FROM {view_name}
+		{where2}
+		ORDER BY id_comanda DESC
+		LIMIT {int(limit)};
+		"""
 
 
 def q_ventas_por_hora(view_name: str, where_sql: str) -> str:

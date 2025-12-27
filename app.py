@@ -8,6 +8,7 @@ from src.metrics import (
     get_actividad_emision_comandas,
     get_detalle,
     get_estado_operativo,
+    get_ids_comandas_anuladas,
     get_ids_comandas_no_impresas,
     get_ids_comandas_pendientes,
     get_kpis,
@@ -299,7 +300,7 @@ if conn is None or startup is None:
 else:
     try:
         estado = get_estado_operativo(conn, startup.view_name, filters, mode_for_metrics)
-        e1, e2 = st.columns(2)
+        e1, e2, e3 = st.columns(3)
         e1.metric(
             "Comandas pendientes",
             format_int(estado["comandas_pendientes"]),
@@ -307,13 +308,19 @@ else:
             border=True,
         )
         e2.metric(
+            "Comandas anuladas",
+            format_int(estado.get("comandas_anuladas")),
+            help="COUNT DISTINCT id_comanda con estado_comanda='ANULADO'.",
+            border=True,
+        )
+        e3.metric(
             "Comandas no impresas",
             format_int(estado["comandas_no_impresas"]),
-            help="COUNT DISTINCT id_comanda donde estado_impresion es NULL o <> 'IMPRESO'.",
+            help="COUNT DISTINCT id_comanda con estado_impresion='PENDIENTE' (no incluye anuladas con NULL).",
             border=True,
         )
 
-        with st.expander("Ver IDs de comandas (pendientes / no impresas)", expanded=False):
+        with st.expander("Ver IDs de comandas (pendientes / no impresas / anuladas)", expanded=False):
             cargar_ids = st.checkbox("Cargar IDs", value=False, key="estado_operativo_load_ids")
             limit = st.number_input("Límite", min_value=10, max_value=200, value=50, step=10)
 
@@ -332,14 +339,24 @@ else:
                     mode_for_metrics,
                     limit=int(limit),
                 )
+                ids_anul = get_ids_comandas_anuladas(
+                    conn,
+                    startup.view_name,
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit),
+                )
 
-                i1, i2 = st.columns(2)
+                i1, i2, i3 = st.columns(3)
                 i1.caption("Pendientes")
                 i1.caption(f"Mostrando {len(ids_pend)} (límite {int(limit)})")
                 i1.code(", ".join(map(str, ids_pend)) if ids_pend else "—")
                 i2.caption("No impresas")
                 i2.caption(f"Mostrando {len(ids_noimp)} (límite {int(limit)})")
                 i2.code(", ".join(map(str, ids_noimp)) if ids_noimp else "—")
+                i3.caption("Anuladas")
+                i3.caption(f"Mostrando {len(ids_anul)} (límite {int(limit)})")
+                i3.code(", ".join(map(str, ids_anul)) if ids_anul else "—")
     except Exception as exc:
         st.error(f"Error cargando estado operativo: {exc}")
         _maybe_render_sql_debug(exc)

@@ -21,8 +21,26 @@
 - UX: en realtime el refresco es manual (botón “Actualizar”); puede existir operativa activa sin ventas (KPIs en 0 no es error).
 - Streamlit: usar `width="stretch"` (evitar `use_container_width`).
 
+## Formato Bolivia (moneda y números)
+- Dinero: mostrar `Bs 1.100,33` (miles con punto, decimales con coma).
+- Conteos: mostrar `1.100`.
+- Centralización: reutilizar helpers en `src/ui/formatting.py`:
+	- `format_bs`, `format_int`
+	- `apply_plotly_bs` (ejes/hover Plotly)
+	- `format_detalle_df` (tabla detalle)
+
+Nota: en la tabla detalle, las columnas monetarias se formatean como texto para consistencia visual; si se ordena por esas columnas, el orden puede ser **lexicográfico**.
+
 ## KPIs/negocio (detalle crítico)
 - Cortesías: el monto usa `cor_subtotal_anterior` cuando `tipo_salida='CORTESIA'` (porque `sub_total` puede ser 0).
+
+## Estado operativo (reglas de negocio)
+- Anuladas: `estado_comanda = 'ANULADO'`.
+- Impresión:
+	- `estado_impresion = 'PENDIENTE'` es temporal (en cola/por procesar).
+	- `estado_impresion = 'IMPRESO'` ya fue procesado.
+	- `estado_impresion IS NULL` suele indicar comanda anulada y es permanente.
+- Por consistencia, el KPI/IDs de “no impresas” debe contar solo `estado_impresion='PENDIENTE'` (no incluir anuladas con NULL).
 
 ## Actividad (fecha_emision)
 - El bloque “Actividad” calcula última comanda, minutos desde la última y ritmo (mediana entre comandas).
@@ -39,3 +57,18 @@
 - SQL: agregar `q_...` en [src/query_store.py](../src/query_store.py).
 - Servicio: agregar `get_...` en [src/metrics.py](../src/metrics.py) usando `_run_df` para envolver errores.
 - UI: cablear en [app.py](../app.py) y renderizar en `st.metric`/Plotly (`src/ui/components.py`).
+
+## Requisito: actualizar documentación tras cambios
+Después de cualquier cambio funcional/UX, actualizar como mínimo:
+- `README.md` (qué cambió para el usuario)
+- `docs/03-evolucion_y_mejoras.md` (registro de evolución)
+- `docs/02-guia_dashboard_backstage.md` (si cambia arquitectura, reglas, o semántica)
+
+Si el cambio afecta el arranque (realtime/histórico) o casos límite, actualizar también `docs/01-flujo_inicio_dashboard.md`.
+
+## Checklist de cierre (antes de dar por listo)
+- Compila en el entorno virtual: `C:/.../.venv/Scripts/python.exe -m py_compile ...`.
+- Verifica formato Bolivia en UI (métricas, gráficos y detalle): `Bs 1.100,33` y conteos `1.100`.
+- Verifica semántica de impresión/anulación: “no impresas” = `estado_impresion='PENDIENTE'` (no incluye `NULL`).
+- Si tocaste SQL/servicios/UI: revisa consistencia end-to-end (query_store → metrics → app/ui).
+- Actualiza documentación (README + docs/03 + docs/02; y docs/01 si aplica) y deja explícitos trade-offs relevantes (p.ej. orden lexicográfico en detalle).

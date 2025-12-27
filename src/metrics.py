@@ -7,6 +7,7 @@ from src.query_store import (
 	build_where,
 	fetch_dataframe,
 	q_comandas_emision_times,
+	q_ids_comandas_anuladas,
 	q_ids_comandas_no_impresas,
 	q_ids_comandas_pendientes,
 	q_detalle,
@@ -112,12 +113,14 @@ def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str)
 	if df is None or df.empty:
 		return {
 			"comandas_pendientes": 0,
+			"comandas_anuladas": 0,
 			"comandas_no_impresas": 0,
 		}
 
 	row = df.iloc[0].to_dict()
 	return {
 		"comandas_pendientes": _to_int(row.get("comandas_pendientes")),
+		"comandas_anuladas": _to_int(row.get("comandas_anuladas")),
 		"comandas_no_impresas": _to_int(row.get("comandas_no_impresas")),
 	}
 
@@ -160,6 +163,31 @@ def get_ids_comandas_no_impresas(
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_no_impresas(view_name, where_sql, limit=limit)
 	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas no impresas")
+
+	if df is None or df.empty or "id_comanda" not in df.columns:
+		return []
+
+	ids: list[int] = []
+	for value in df["id_comanda"].tolist():
+		iv = _to_int(value)
+		if iv:
+			ids.append(iv)
+	return ids
+
+
+def get_ids_comandas_anuladas(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 50,
+) -> list[int]:
+	"""IDs de comandas anuladas (top por id desc)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_ids_comandas_anuladas(view_name, where_sql, limit=limit)
+	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas anuladas")
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []
