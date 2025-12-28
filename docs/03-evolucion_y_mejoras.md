@@ -64,6 +64,10 @@ El dashboard evolucionó por etapas, incorporando información útil de forma in
 - Ítems vendidos
 - Ticket promedio
 
+Definición aplicada (fuente de verdad: vista):
+- Para evitar incluir comandas no finalizadas, “Ventas” se calcula solo cuando:
+	`tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
+
 Mejora UX aplicada:
 - Se unificó el formato de moneda y conteos para Bolivia.
 	- Dinero: `Bs 1.100,33`
@@ -98,8 +102,9 @@ con control de carga (checkbox) y límite configurable.
 
 Semántica operativa (importante):
 - `estado_impresion='PENDIENTE'` es un estado temporal (en cola de impresión/procesamiento).
-- `estado_impresion=NULL` suele aparecer cuando la comanda fue anulada y es permanente.
-- Por consistencia, el KPI/IDs de “no impresas” cuentan solo `estado_impresion='PENDIENTE'` (no incluye anuladas).
+- `estado_impresion=NULL` puede aparecer antes de imprimirse (pendiente/no procesada) y también cuando la comanda fue anulada.
+- Para desambiguar, se interpreta junto con `estado_comanda`.
+- Por consistencia, el KPI/IDs de “no impresas” cuentan comandas **no anuladas** con `estado_impresion IS NULL OR estado_impresion='PENDIENTE'`.
 
 ### 4.4 Gráficos
 

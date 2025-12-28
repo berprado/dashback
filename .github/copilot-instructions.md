@@ -34,13 +34,17 @@ Nota: en la tabla detalle, las columnas monetarias se formatean como texto para 
 ## KPIs/negocio (detalle crítico)
 - Cortesías: el monto usa `cor_subtotal_anterior` cuando `tipo_salida='CORTESIA'` (porque `sub_total` puede ser 0).
 
+## Definición de “Ventas” (regla de negocio)
+- Para KPIs/gráficos de ventas, contar solo comandas finalizadas:
+	`tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
+
 ## Estado operativo (reglas de negocio)
 - Anuladas: `estado_comanda = 'ANULADO'`.
 - Impresión:
 	- `estado_impresion = 'PENDIENTE'` es temporal (en cola/por procesar).
 	- `estado_impresion = 'IMPRESO'` ya fue procesado.
-	- `estado_impresion IS NULL` suele indicar comanda anulada y es permanente.
-- Por consistencia, el KPI/IDs de “no impresas” debe contar solo `estado_impresion='PENDIENTE'` (no incluir anuladas con NULL).
+	- `estado_impresion IS NULL` puede aparecer antes de imprimirse y también en anuladas.
+- Por consistencia, el KPI/IDs de “no impresas” debe contar: `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
 
 ## Actividad (fecha_emision)
 - El bloque “Actividad” calcula última comanda, minutos desde la última y ritmo (mediana entre comandas).

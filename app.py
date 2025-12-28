@@ -316,7 +316,10 @@ else:
         e3.metric(
             "Comandas no impresas",
             format_int(estado["comandas_no_impresas"]),
-            help="COUNT DISTINCT id_comanda con estado_impresion='PENDIENTE' (no incluye anuladas con NULL).",
+            help=(
+                "COUNT DISTINCT id_comanda no anulada donde estado_impresion es NULL o 'PENDIENTE' "
+                "(pendiente de impresión/proceso)."
+            ),
             border=True,
         )
 

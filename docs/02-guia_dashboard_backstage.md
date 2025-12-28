@@ -51,7 +51,11 @@ Cuando haya dudas, la fuente de verdad es el código en `src/`.
 ### Semántica adicional: `estado_impresion` en la práctica
 - `IMPRESO`: impresión ya procesada.
 - `PENDIENTE`: estado temporal (en cola/por procesar).
-- `NULL`: típico cuando la comanda fue **anulada** (estado permanente).
+- `NULL`: puede indicar que aún no fue procesada/impresa; también aparece en comandas **anuladas**.
+
+Regla práctica:
+- Para identificar anuladas, usar `estado_comanda='ANULADO'` (suele venir con `estado_impresion=NULL`).
+- Para identificar pendientes de impresión, usar `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
 
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 
@@ -475,8 +479,12 @@ Nota de formato (implementación actual):
 - En la tabla de detalle, las columnas monetarias pueden renderizarse como texto ya formateado; si se ordena por ellas, el orden puede ser **lexicográfico** (texto) y no numérico.
 
 Nota de estados (implementación actual):
-- El KPI/IDs de “no impresas” se calcula como `estado_impresion='PENDIENTE'`.
-- Las anuladas se identifican por `estado_comanda='ANULADO'` (y suelen tener `estado_impresion=NULL`).
+- El KPI/IDs de “no impresas” se calcula como `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+- Las anuladas se identifican por `estado_comanda='ANULADO'`.
+
+Definición de “Ventas” (implementación actual):
+- Para KPIs y gráficos de ventas, se consideran solo comandas finalizadas:
+  `tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
 
 ### 4.3 Controles de rendimiento
 - No cargar detalle si el usuario no lo solicita (tabs/expander).
