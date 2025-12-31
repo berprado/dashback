@@ -21,6 +21,17 @@
 - UX: en realtime el refresco es manual (botón “Actualizar”); puede existir operativa activa sin ventas (KPIs en 0 no es error).
 - Streamlit: usar `width="stretch"` (evitar `use_container_width`).
 
+## Estándar de ayudas (tooltips `help`) en la UI
+- Cada `st.metric(..., help=...)` debe explicitar:
+	- **Qué mide** (definición de negocio).
+	- **Qué incluye/excluye** (p.ej. ventas finalizadas vs actividad sin filtro).
+	- **En qué contexto** corre (vista + filtros del modo actual).
+- Distinguir siempre entre:
+	- **Ventas finalizadas**: `VENTA/PROCESADO/IMPRESO`.
+	- **Cortesías finalizadas**: `CORTESIA/PROCESADO/IMPRESO`.
+	- **Actividad**: basada en `fecha_emision`, sin filtrar por tipo/estado (pulso operativo).
+	- **Estado operativo**: pendientes/anuladas/no impresas (semántica de impresión).
+
 ## Formato Bolivia (moneda y números)
 - Dinero: mostrar `Bs 1.100,33` (miles con punto, decimales con coma).
 - Conteos: mostrar `1.100`.
@@ -73,6 +84,6 @@ Si el cambio afecta el arranque (realtime/histórico) o casos límite, actualiza
 ## Checklist de cierre (antes de dar por listo)
 - Compila en el entorno virtual: `C:/.../.venv/Scripts/python.exe -m py_compile ...`.
 - Verifica formato Bolivia en UI (métricas, gráficos y detalle): `Bs 1.100,33` y conteos `1.100`.
-- Verifica semántica de impresión/anulación: “no impresas” = `estado_impresion='PENDIENTE'` (no incluye `NULL`).
+- Verifica semántica de impresión/anulación: “no impresas” = `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
 - Si tocaste SQL/servicios/UI: revisa consistencia end-to-end (query_store → metrics → app/ui).
 - Actualiza documentación (README + docs/03 + docs/02; y docs/01 si aplica) y deja explícitos trade-offs relevantes (p.ej. orden lexicográfico en detalle).

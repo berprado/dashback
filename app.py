@@ -83,11 +83,28 @@ try:
                 "Filtrar histórico por",
                 ["Operativas", "Fechas"],
                 index=0,
+                help=(
+                    "Define cómo se acota el histórico. "
+                    "Operativas filtra por id_operacion (op_ini–op_fin). "
+                    "Fechas filtra por fecha_emision (dt_ini–dt_fin)."
+                ),
             )
 
             if filtro_historico == "Fechas":
-                dt_ini_date = st.date_input("Fecha inicio")
-                dt_fin_date = st.date_input("Fecha fin")
+                dt_ini_date = st.date_input(
+                    "Fecha inicio",
+                    help=(
+                        "Inicio del rango para histórico (se aplica sobre fecha_emision). "
+                        "El rango se interpreta como fecha inicio 00:00:00."
+                    ),
+                )
+                dt_fin_date = st.date_input(
+                    "Fecha fin",
+                    help=(
+                        "Fin del rango para histórico (se aplica sobre fecha_emision). "
+                        "El rango se interpreta como fecha fin 23:59:59."
+                    ),
+                )
 
                 if dt_ini_date > dt_fin_date:
                     dt_ini_date, dt_fin_date = dt_fin_date, dt_ini_date
@@ -110,8 +127,24 @@ try:
                     default_id = startup.operacion_id if startup.operacion_id in ids else ids[0]
                     default_idx = ids.index(default_id)
 
-                    op_ini_label = st.selectbox("Operativa inicio", labels, index=default_idx)
-                    op_fin_label = st.selectbox("Operativa fin", labels, index=default_idx)
+                    op_ini_label = st.selectbox(
+                        "Operativa inicio",
+                        labels,
+                        index=default_idx,
+                        help=(
+                            "Inicio del rango de operativas para histórico. "
+                            "Se aplica como filtro id_operacion BETWEEN op_ini AND op_fin."
+                        ),
+                    )
+                    op_fin_label = st.selectbox(
+                        "Operativa fin",
+                        labels,
+                        index=default_idx,
+                        help=(
+                            "Fin del rango de operativas para histórico. "
+                            "Se aplica como filtro id_operacion BETWEEN op_ini AND op_fin."
+                        ),
+                    )
 
                     op_ini = ids[labels.index(op_ini_label)]
                     op_fin = ids[labels.index(op_fin_label)]
@@ -183,25 +216,31 @@ else:
         c1.metric(
             "Total vendido",
             format_bs(kpis["total_vendido"]),
-            help="Suma de sub_total (ventas) en el rango/vista seleccionada.",
+            help=(
+                "Ventas finalizadas (tipo_salida='VENTA', estado_comanda='PROCESADO', estado_impresion='IMPRESO'): "
+                "suma de sub_total en el contexto seleccionado."
+            ),
             border=True,
         )
         c2.metric(
             "Comandas",
             format_int(kpis["total_comandas"]),
-            help="Cantidad de comandas distintas (COUNT DISTINCT id_comanda).",
+            help=(
+                "Ventas finalizadas (VENTA/PROCESADO/IMPRESO): cantidad de comandas distintas "
+                "(COUNT DISTINCT id_comanda)."
+            ),
             border=True,
         )
         c3.metric(
             "Ítems",
             format_int(kpis["items_vendidos"]),
-            help="Suma de cantidades (SUM cantidad).",
+            help="Ventas finalizadas (VENTA/PROCESADO/IMPRESO): suma de cantidades (SUM cantidad).",
             border=True,
         )
         c4.metric(
             "Ticket promedio",
             format_bs(kpis["ticket_promedio"]),
-            help="Total vendido / comandas (redondeado).",
+            help="Ventas finalizadas: total vendido / comandas (redondeado).",
             border=True,
         )
 
@@ -240,20 +279,25 @@ else:
             a1.metric(
                 "Última comanda",
                 last_ts_txt,
-                help="Hora (MAX fecha_emision) de la última comanda emitida en el contexto actual.",
+                help=(
+                    "Hora (MAX fecha_emision) de la última comanda emitida (por id_comanda) en el contexto actual. "
+                    "Incluye ventas/cortesías y no filtra por estado (pendiente/anulada)."
+                ),
                 border=True,
             )
             a2.metric(
                 "Min desde última",
                 minutes_since_txt,
-                help="Minutos transcurridos desde la última comanda (según reloj del servidor).",
+                help=(
+                    "Minutos transcurridos desde la última fecha_emision (según el reloj del servidor donde corre Streamlit)."
+                ),
                 border=True,
             )
             a3.metric(
                 f"Ritmo (últimas {int(recent_n or 10)})",
                 (f"{float(recent_median):.1f} min" if recent_median is not None else None),
                 help=(
-                    "Mediana de minutos entre comandas consecutivas (por id_comanda). "
+                    "Mediana de minutos entre comandas consecutivas (por id_comanda), sin filtrar por tipo/estado. "
                     + (f"Intervalos usados: {int(recent_intervals or 0)}.")
                 ),
                 border=True,
@@ -262,7 +306,7 @@ else:
                 "Ritmo (operativa/rango)",
                 (f"{float(all_median):.1f} min" if all_median is not None else None),
                 help=(
-                    "Mediana de minutos entre comandas consecutivas en todo el contexto actual. "
+                    "Mediana de minutos entre comandas consecutivas en todo el contexto actual, sin filtrar por tipo/estado. "
                     + (f"Intervalos usados: {int(all_intervals or 0)}.")
                 ),
                 border=True,
@@ -275,19 +319,22 @@ else:
         k1.metric(
             "Total cortesías",
             format_bs(kpis["total_cortesia"]),
-            help="Para tipo_salida=CORTESIA usa cor_subtotal_anterior cuando aplica.",
+            help=(
+                "Cortesías finalizadas (tipo_salida='CORTESIA', estado_comanda='PROCESADO', estado_impresion='IMPRESO'): "
+                "suma de cor_subtotal_anterior (si existe) o sub_total."
+            ),
             border=True,
         )
         k2.metric(
             "Comandas cortesía",
             format_int(kpis["comandas_cortesia"]),
-            help="Cantidad de comandas con tipo_salida=CORTESIA.",
+            help="Cortesías finalizadas (CORTESIA/PROCESADO/IMPRESO): cantidad de comandas distintas.",
             border=True,
         )
         k3.metric(
             "Ítems cortesía",
             format_int(kpis["items_cortesia"]),
-            help="Suma de cantidad donde tipo_salida=CORTESIA.",
+            help="Cortesías finalizadas (CORTESIA/PROCESADO/IMPRESO): suma de cantidad.",
             border=True,
         )
     except Exception as exc:
@@ -304,28 +351,48 @@ else:
         e1.metric(
             "Comandas pendientes",
             format_int(estado["comandas_pendientes"]),
-            help="COUNT DISTINCT id_comanda con estado_comanda='PENDIENTE'.",
+            help="Comandas con estado_comanda='PENDIENTE' (cualquier tipo_salida/estado_impresion).",
             border=True,
         )
         e2.metric(
             "Comandas anuladas",
             format_int(estado.get("comandas_anuladas")),
-            help="COUNT DISTINCT id_comanda con estado_comanda='ANULADO'.",
+            help="Comandas con estado_comanda='ANULADO' (cualquier tipo_salida/estado_impresion).",
             border=True,
         )
         e3.metric(
             "Comandas no impresas",
             format_int(estado["comandas_no_impresas"]),
             help=(
-                "COUNT DISTINCT id_comanda no anulada donde estado_impresion es NULL o 'PENDIENTE' "
-                "(pendiente de impresión/proceso)."
+                "Comandas no anuladas donde estado_impresion es NULL o 'PENDIENTE' "
+                "(aún no procesadas/impresas)."
             ),
             border=True,
         )
 
         with st.expander("Ver IDs de comandas (pendientes / no impresas / anuladas)", expanded=False):
-            cargar_ids = st.checkbox("Cargar IDs", value=False, key="estado_operativo_load_ids")
-            limit = st.number_input("Límite", min_value=10, max_value=200, value=50, step=10)
+            cargar_ids = st.checkbox(
+                "Cargar IDs",
+                value=False,
+                key="estado_operativo_load_ids",
+                help=(
+                    "Carga los IDs desde la base de datos para el contexto actual. "
+                    "Pendientes: estado_comanda='PENDIENTE'. "
+                    "Anuladas: estado_comanda='ANULADO'. "
+                    "No impresas: no anuladas con estado_impresion NULL o 'PENDIENTE'."
+                ),
+            )
+            limit = st.number_input(
+                "Límite",
+                min_value=10,
+                max_value=200,
+                value=50,
+                step=10,
+                help=(
+                    "Máximo de IDs a traer por categoría. "
+                    "Se ordena por id_comanda DESC y se aplica LIMIT."
+                ),
+            )
 
             if cargar_ids:
                 ids_pend = get_ids_comandas_pendientes(
@@ -368,6 +435,9 @@ g1, g2 = st.columns(2)
 
 with g1:
     st.subheader("Ventas por hora")
+    st.caption(
+        "Ventas finalizadas (VENTA/PROCESADO/IMPRESO) agrupadas por HOUR(fecha_emision) en el contexto actual."
+    )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver ventas por hora.")
     else:
@@ -387,6 +457,9 @@ with g1:
 
 with g2:
     st.subheader("Ventas por categoría")
+    st.caption(
+        "Ventas finalizadas (VENTA/PROCESADO/IMPRESO) agrupadas por categoría en el contexto actual."
+    )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver ventas por categoría.")
     else:
@@ -405,6 +478,9 @@ g3, g4 = st.columns(2)
 
 with g3:
     st.subheader("Top productos")
+    st.caption(
+        "Ranking por total vendido de ventas finalizadas (VENTA/PROCESADO/IMPRESO) en el contexto actual."
+    )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver top productos.")
     else:
@@ -421,6 +497,9 @@ with g3:
 
 with g4:
     st.subheader("Ventas por usuario")
+    st.caption(
+        "Ranking por total vendido de ventas finalizadas (VENTA/PROCESADO/IMPRESO) en el contexto actual."
+    )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver ventas por usuario.")
     else:
@@ -440,7 +519,18 @@ if conn is None or startup is None:
     st.info("Conecta a la base de datos para ver el detalle.")
 else:
     with st.expander("Ver detalle (últimas 500 filas)", expanded=False):
-        cargar_detalle = st.checkbox("Cargar detalle", value=False, key="detalle_load")
+        st.caption(
+            "Muestra filas del contexto actual sin filtrar por tipo/estado (incluye ventas/cortesías y pendientes/anuladas)."
+        )
+        cargar_detalle = st.checkbox(
+            "Cargar detalle",
+            value=False,
+            key="detalle_load",
+            help=(
+                "Ejecuta la consulta de detalle (hasta 500 filas, ordenadas por fecha_emision DESC). "
+                "Nota: en la tabla, montos pueden mostrarse como texto formateado (orden puede ser lexicográfico)."
+            ),
+        )
         try:
             if cargar_detalle:
                 detalle = get_detalle(conn, startup.view_name, filters, mode_for_metrics, limit=500)

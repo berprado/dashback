@@ -201,6 +201,17 @@ Diagnóstico controlado:
 - Se evitó polling/auto-refresh continuo; se dejó un refresco manual en modo tiempo real.
 - Se cargan recursos pesados (detalle e IDs) solo bajo demanda.
 
+### 9.1 Estándar de ayudas (tooltips `help`)
+
+Se estandarizaron las ayudas (`help=`) en KPIs y métricas para reducir interpretaciones incorrectas.
+
+Principios aplicados:
+- Cada métrica aclara **qué mide**, **qué incluye/excluye** y **en qué contexto** se calcula (vista + filtros activos).
+- Se diferencia explícitamente entre:
+	- **Ventas finalizadas** (VENTA/PROCESADO/IMPRESO) para KPIs/gráficos de ventas.
+	- **Actividad** basada en `fecha_emision` (pulso operativo), sin filtrar por tipo/estado.
+	- **Estado operativo** (pendientes/anuladas/no impresas) usando semántica de impresión consistente.
+
 ---
 
 ## 10) Seguridad de configuración

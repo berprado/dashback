@@ -57,6 +57,21 @@ Regla práctica:
 - Para identificar anuladas, usar `estado_comanda='ANULADO'` (suele venir con `estado_impresion=NULL`).
 - Para identificar pendientes de impresión, usar `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
 
+---
+
+## Estándar de ayudas (tooltips `help`) en la UI
+
+Para evitar ambigüedades (especialmente entre “ventas”, “actividad” y “estado operativo”), las ayudas (`help=`) deben seguir este estándar:
+
+- Definir **qué mide** el KPI (regla de negocio, en una frase).
+- Indicar **qué incluye/excluye** (p.ej. “ventas finalizadas” vs “actividad sin filtrar por tipo/estado”).
+- Aclarar el **contexto**: vista + filtros activos del modo actual (tiempo real / histórico).
+
+Reglas clave que deben aparecer explícitas cuando aplique:
+- Ventas: `tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
+- Cortesías: `tipo_salida='CORTESIA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
+- No impresas: `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 
 ### 1.1 Vista base recomendada: `comandas_v6_base`
