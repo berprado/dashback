@@ -9,8 +9,9 @@ from src.metrics import (
     get_detalle,
     get_estado_operativo,
     get_ids_comandas_anuladas,
-    get_ids_comandas_no_impresas,
+    get_ids_comandas_impresion_pendiente,
     get_ids_comandas_pendientes,
+    get_ids_comandas_sin_estado_impresion,
     get_kpis,
     get_top_productos,
     get_ventas_por_categoria,
@@ -347,7 +348,7 @@ if conn is None or startup is None:
 else:
     try:
         estado = get_estado_operativo(conn, startup.view_name, filters, mode_for_metrics)
-        e1, e2, e3 = st.columns(3)
+        e1, e2, e3, e4 = st.columns(4)
         e1.metric(
             "Comandas pendientes",
             format_int(estado["comandas_pendientes"]),
@@ -361,16 +362,27 @@ else:
             border=True,
         )
         e3.metric(
-            "Comandas no impresas",
-            format_int(estado["comandas_no_impresas"]),
+            "Impresión pendiente",
+            format_int(estado["comandas_impresion_pendiente"]),
             help=(
-                "Comandas no anuladas donde estado_impresion es NULL o 'PENDIENTE' "
-                "(aún no procesadas/impresas)."
+                "Comandas no anuladas con estado_impresion='PENDIENTE' (en cola/por procesar)."
+            ),
+            border=True,
+        )
+        e4.metric(
+            "Sin estado impresión",
+            format_int(estado["comandas_sin_estado_impresion"]),
+            help=(
+                "Comandas no anuladas con estado_impresion IS NULL. "
+                "Puede indicar que aún no fue procesada/impresa o que el POS no registró el estado."
             ),
             border=True,
         )
 
-        with st.expander("Ver IDs de comandas (pendientes / no impresas / anuladas)", expanded=False):
+        with st.expander(
+            "Ver IDs de comandas (pendientes / impresión pendiente / sin estado / anuladas)",
+            expanded=False,
+        ):
             cargar_ids = st.checkbox(
                 "Cargar IDs",
                 value=False,
@@ -379,7 +391,8 @@ else:
                     "Carga los IDs desde la base de datos para el contexto actual. "
                     "Pendientes: estado_comanda='PENDIENTE'. "
                     "Anuladas: estado_comanda='ANULADO'. "
-                    "No impresas: no anuladas con estado_impresion NULL o 'PENDIENTE'."
+                    "Impresión pendiente: no anuladas con estado_impresion='PENDIENTE'. "
+                    "Sin estado: no anuladas con estado_impresion IS NULL."
                 ),
             )
             limit = st.number_input(
@@ -402,7 +415,14 @@ else:
                     mode_for_metrics,
                     limit=int(limit),
                 )
-                ids_noimp = get_ids_comandas_no_impresas(
+                ids_imp_pend = get_ids_comandas_impresion_pendiente(
+                    conn,
+                    startup.view_name,
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit),
+                )
+                ids_sin_ei = get_ids_comandas_sin_estado_impresion(
                     conn,
                     startup.view_name,
                     filters,
@@ -417,16 +437,19 @@ else:
                     limit=int(limit),
                 )
 
-                i1, i2, i3 = st.columns(3)
+                i1, i2, i3, i4 = st.columns(4)
                 i1.caption("Pendientes")
                 i1.caption(f"Mostrando {len(ids_pend)} (límite {int(limit)})")
                 i1.code(", ".join(map(str, ids_pend)) if ids_pend else "—")
-                i2.caption("No impresas")
-                i2.caption(f"Mostrando {len(ids_noimp)} (límite {int(limit)})")
-                i2.code(", ".join(map(str, ids_noimp)) if ids_noimp else "—")
-                i3.caption("Anuladas")
-                i3.caption(f"Mostrando {len(ids_anul)} (límite {int(limit)})")
-                i3.code(", ".join(map(str, ids_anul)) if ids_anul else "—")
+                i2.caption("Impresión pendiente")
+                i2.caption(f"Mostrando {len(ids_imp_pend)} (límite {int(limit)})")
+                i2.code(", ".join(map(str, ids_imp_pend)) if ids_imp_pend else "—")
+                i3.caption("Sin estado impresión")
+                i3.caption(f"Mostrando {len(ids_sin_ei)} (límite {int(limit)})")
+                i3.code(", ".join(map(str, ids_sin_ei)) if ids_sin_ei else "—")
+                i4.caption("Anuladas")
+                i4.caption(f"Mostrando {len(ids_anul)} (límite {int(limit)})")
+                i4.code(", ".join(map(str, ids_anul)) if ids_anul else "—")
     except Exception as exc:
         st.error(f"Error cargando estado operativo: {exc}")
         _maybe_render_sql_debug(exc)

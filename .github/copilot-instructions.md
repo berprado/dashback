@@ -30,7 +30,7 @@
 	- **Ventas finalizadas**: `VENTA/PROCESADO/IMPRESO`.
 	- **Cortesías finalizadas**: `CORTESIA/PROCESADO/IMPRESO`.
 	- **Actividad**: basada en `fecha_emision`, sin filtrar por tipo/estado (pulso operativo).
-	- **Estado operativo**: pendientes/anuladas/no impresas (semántica de impresión).
+	- **Estado operativo**: pendientes/anuladas/impresión pendiente/sin estado (semántica de impresión).
 
 ## Formato Bolivia (moneda y números)
 - Dinero: mostrar `Bs 1.100,33` (miles con punto, decimales con coma).
@@ -55,7 +55,9 @@ Nota: en la tabla detalle, las columnas monetarias se formatean como texto para 
 	- `estado_impresion = 'PENDIENTE'` es temporal (en cola/por procesar).
 	- `estado_impresion = 'IMPRESO'` ya fue procesado.
 	- `estado_impresion IS NULL` puede aparecer antes de imprimirse y también en anuladas.
-- Por consistencia, el KPI/IDs de “no impresas” debe contar: `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+- Por consistencia, separar en 2 KPIs/IDs:
+	- **Impresión pendiente**: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
+	- **Sin estado de impresión**: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 
 ## Actividad (fecha_emision)
 - El bloque “Actividad” calcula última comanda, minutos desde la última y ritmo (mediana entre comandas).
@@ -84,6 +86,8 @@ Si el cambio afecta el arranque (realtime/histórico) o casos límite, actualiza
 ## Checklist de cierre (antes de dar por listo)
 - Compila en el entorno virtual: `C:/.../.venv/Scripts/python.exe -m py_compile ...`.
 - Verifica formato Bolivia en UI (métricas, gráficos y detalle): `Bs 1.100,33` y conteos `1.100`.
-- Verifica semántica de impresión/anulación: “no impresas” = `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+- Verifica semántica de impresión/anulación:
+	- Impresión pendiente = `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
+	- Sin estado impresión = `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 - Si tocaste SQL/servicios/UI: revisa consistencia end-to-end (query_store → metrics → app/ui).
 - Actualiza documentación (README + docs/03 + docs/02; y docs/01 si aplica) y deja explícitos trade-offs relevantes (p.ej. orden lexicográfico en detalle).

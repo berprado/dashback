@@ -8,8 +8,10 @@ from src.query_store import (
 	fetch_dataframe,
 	q_comandas_emision_times,
 	q_ids_comandas_anuladas,
+	q_ids_comandas_impresion_pendiente,
 	q_ids_comandas_no_impresas,
 	q_ids_comandas_pendientes,
+	q_ids_comandas_sin_estado_impresion,
 	q_detalle,
 	q_estado_operativo,
 	q_kpis,
@@ -114,14 +116,16 @@ def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str)
 		return {
 			"comandas_pendientes": 0,
 			"comandas_anuladas": 0,
-			"comandas_no_impresas": 0,
+			"comandas_impresion_pendiente": 0,
+			"comandas_sin_estado_impresion": 0,
 		}
 
 	row = df.iloc[0].to_dict()
 	return {
 		"comandas_pendientes": _to_int(row.get("comandas_pendientes")),
 		"comandas_anuladas": _to_int(row.get("comandas_anuladas")),
-		"comandas_no_impresas": _to_int(row.get("comandas_no_impresas")),
+		"comandas_impresion_pendiente": _to_int(row.get("comandas_impresion_pendiente")),
+		"comandas_sin_estado_impresion": _to_int(row.get("comandas_sin_estado_impresion")),
 	}
 
 
@@ -163,6 +167,56 @@ def get_ids_comandas_no_impresas(
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_no_impresas(view_name, where_sql, limit=limit)
 	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas no impresas")
+
+	if df is None or df.empty or "id_comanda" not in df.columns:
+		return []
+
+	ids: list[int] = []
+	for value in df["id_comanda"].tolist():
+		iv = _to_int(value)
+		if iv:
+			ids.append(iv)
+	return ids
+
+
+def get_ids_comandas_impresion_pendiente(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 50,
+) -> list[int]:
+	"""IDs de comandas con impresión pendiente (estado_impresion='PENDIENTE')."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_ids_comandas_impresion_pendiente(view_name, where_sql, limit=limit)
+	df = _run_df(conn, sql, params, context="Error obteniendo IDs con impresión pendiente")
+
+	if df is None or df.empty or "id_comanda" not in df.columns:
+		return []
+
+	ids: list[int] = []
+	for value in df["id_comanda"].tolist():
+		iv = _to_int(value)
+		if iv:
+			ids.append(iv)
+	return ids
+
+
+def get_ids_comandas_sin_estado_impresion(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 50,
+) -> list[int]:
+	"""IDs de comandas sin estado de impresión (estado_impresion IS NULL)."""
+
+	where_sql, params = build_where(filters, mode)
+	sql = q_ids_comandas_sin_estado_impresion(view_name, where_sql, limit=limit)
+	df = _run_df(conn, sql, params, context="Error obteniendo IDs sin estado de impresión")
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []

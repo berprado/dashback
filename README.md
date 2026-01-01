@@ -34,10 +34,11 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 - **Formato Bolivia (moneda)**: montos en `Bs 1.100,33` (miles con punto, decimales con coma) y conteos en `1.100`.
 - **Actividad (tiempo real / histórico)**: última comanda, minutos desde la última, y ritmo de emisión (mediana entre comandas para últimas 10 y para el rango completo).
 - **Cortesías**: total cortesías (usa `cor_subtotal_anterior` cuando aplica), comandas cortesía e ítems cortesía.
-- **Estado operativo**: comandas pendientes, anuladas y no impresas, con opción para ver IDs (con límite).
-   - `estado_impresion='PENDIENTE'` (cuando aparece) es temporal (en cola/por procesar).
-   - `estado_impresion=NULL` puede significar “aún no procesada/impresa” o “anulada”; se interpreta junto con `estado_comanda`.
-   - “No impresas” cuenta comandas no anuladas con `estado_impresion IS NULL OR estado_impresion='PENDIENTE'`.
+- **Estado operativo**: comandas pendientes, anuladas, impresión pendiente y sin estado de impresión, con opción para ver IDs (con límite).
+   - `estado_impresion='PENDIENTE'` es temporal (en cola/por procesar).
+   - `estado_impresion=NULL` puede significar “aún no procesada/impresa” o “dato faltante”; se interpreta junto con `estado_comanda`.
+   - Impresión pendiente: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
+   - Sin estado impresión: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 - **Gráficos (2 columnas)**: ventas por hora, por categoría, top productos, ventas por usuario.
 - **Detalle** (últimas 500 filas) bajo demanda.
    - Nota: las columnas monetarias del detalle se formatean como texto para asegurar consistencia visual; por eso, si ordenas esas columnas, el orden puede ser **lexicográfico** (texto) en lugar de numérico.

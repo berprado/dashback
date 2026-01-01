@@ -55,7 +55,8 @@ Cuando haya dudas, la fuente de verdad es el código en `src/`.
 
 Regla práctica:
 - Para identificar anuladas, usar `estado_comanda='ANULADO'` (suele venir con `estado_impresion=NULL`).
-- Para identificar pendientes de impresión, usar `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+- Para identificar pendientes de impresión, usar `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
+- Para identificar “sin estado de impresión”, usar `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 
 ---
 
@@ -70,7 +71,8 @@ Para evitar ambigüedades (especialmente entre “ventas”, “actividad” y �
 Reglas clave que deben aparecer explícitas cuando aplique:
 - Ventas: `tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
 - Cortesías: `tipo_salida='CORTESIA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
-- No impresas: `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+- Impresión pendiente: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
+- Sin estado impresión: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 
@@ -299,7 +301,8 @@ def q_kpis(view_name: str, where_sql: str) -> str:
       ROUND(SUM(sub_total) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio,
 
       COUNT(DISTINCT CASE WHEN estado_comanda = 'PENDIENTE' THEN id_comanda END) AS comandas_pendientes,
-      COUNT(DISTINCT CASE WHEN (estado_impresion IS NULL OR estado_impresion <> 'IMPRESO') THEN id_comanda END) AS comandas_no_impresas,
+      COUNT(DISTINCT CASE WHEN estado_comanda <> 'ANULADO' AND estado_impresion = 'PENDIENTE' THEN id_comanda END) AS comandas_impresion_pendiente,
+      COUNT(DISTINCT CASE WHEN estado_comanda <> 'ANULADO' AND estado_impresion IS NULL THEN id_comanda END) AS comandas_sin_estado_impresion,
 
       SUM(CASE WHEN tipo_salida = 'CORTESIA' THEN COALESCE(cor_subtotal_anterior, sub_total, 0) ELSE 0 END) AS monto_cortesia,
       COUNT(DISTINCT CASE WHEN tipo_salida = 'CORTESIA' THEN id_comanda END) AS comandas_cortesia,
@@ -494,7 +497,9 @@ Nota de formato (implementación actual):
 - En la tabla de detalle, las columnas monetarias pueden renderizarse como texto ya formateado; si se ordena por ellas, el orden puede ser **lexicográfico** (texto) y no numérico.
 
 Nota de estados (implementación actual):
-- El KPI/IDs de “no impresas” se calcula como `estado_comanda<>'ANULADO' AND (estado_impresion IS NULL OR estado_impresion='PENDIENTE')`.
+- Se separa en 2 KPIs/IDs:
+  - Impresión pendiente: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
+  - Sin estado impresión: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 - Las anuladas se identifican por `estado_comanda='ANULADO'`.
 
 Definición de “Ventas” (implementación actual):
@@ -503,7 +508,7 @@ Definición de “Ventas” (implementación actual):
 
 ### 4.3 Controles de rendimiento
 - No cargar detalle si el usuario no lo solicita (tabs/expander).
-- No cargar IDs (pendientes/no impresas) si el usuario no lo solicita.
+- No cargar IDs (pendientes/impresión pendiente/sin estado/anuladas) si el usuario no lo solicita.
 - Para tiempo real: refresco manual (botón “Actualizar”).
 
 ### 4.4 Presentación de métricas
