@@ -41,6 +41,16 @@ Cuando haya dudas, la fuente de verdad es el código en `src/`.
 - `ope_operacion.estado` también es lógico (`HAB` / `DES`).  
   ✅ El dashboard debe **mostrar solo `HAB`**.
 - Estados de negocio se obtienen de `parameter_table`:
+  - `parameter_table.id_master` referencia el catálogo en `master_table.id`.
+    - La descripción/definición del catálogo está en `master_table.descripcion`.
+    - Útil para auditorías rápidas (¿qué significa cada `id_master`?):
+
+```sql
+SELECT mt.id, mt.descripcion
+FROM master_table mt
+WHERE mt.id IN (6, 7, 10, 15);
+```
+
   - `estado_operacion` → `id_master = 6` (22 EN PROCESO, 23 CERRADO, 24 INICIO CIERRE)
   - `estado_comanda` → `id_master = 7` (25 PENDIENTE, 26 PROCESADO, 27 ANULADO)
   - `estado_impresion` → `id_master = 10` (31 IMPRESO, 32 PENDIENTE)
