@@ -198,6 +198,20 @@ Diagnóstico controlado:
 - Checkbox “Mostrar SQL/params en errores”.
 - Si una consulta falla, se muestran SQL y parámetros, facilitando diagnóstico sin exponer secretos.
 
+### 8.1 Diagnóstico de impresión (impacto en ventas)
+
+Se observó un caso operativo relevante:
+
+- `bar_comanda.estado_impresion` puede quedar `NULL` aunque la impresión física ya ocurrió.
+- `comandas_v6` refleja fielmente `bar_comanda` (por eso mantiene el `NULL`).
+- El log (`bar_comanda_impresion` / `vw_comanda_ultima_impresion`) puede ya contener `IMPRESO`.
+- `comandas_v7` toma su estado de impresión desde `vw_comanda_ultima_impresion`.
+
+Para evitar diagnósticos “a ciegas” cuando el KPI de ventas queda subestimado por el `NULL`, se agregó en la UI:
+
+- Un expander de diagnóstico que calcula “Total vendido (con log)” y el delta contra el cálculo estricto.
+- Un toggle “Ventas: usar log de impresión” para aplicar la señal del log también a KPIs y gráficos.
+
 ---
 
 ## 9) Rendimiento y UX

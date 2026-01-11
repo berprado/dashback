@@ -76,7 +76,7 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 	- `mode='ops'|'dates'`: histórico con filtros
 	"""
 
-	where_sql, params = build_where(filters, mode)
+	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_kpis(view_name, where_sql)
 	df = _run_df(conn, sql, params, context="Error ejecutando KPIs")
 
@@ -86,6 +86,10 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 			"total_comandas": 0,
 			"items_vendidos": 0.0,
 			"ticket_promedio": 0.0,
+			"total_vendido_impreso_log": 0.0,
+			"total_comandas_impreso_log": 0,
+			"items_vendidos_impreso_log": 0.0,
+			"ticket_promedio_impreso_log": 0.0,
 			"total_cortesia": 0.0,
 			"items_cortesia": 0.0,
 			"comandas_cortesia": 0,
@@ -97,6 +101,10 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 		"total_comandas": _to_int(row.get("total_comandas")),
 		"items_vendidos": _to_float(row.get("items_vendidos")),
 		"ticket_promedio": _to_float(row.get("ticket_promedio")),
+		"total_vendido_impreso_log": _to_float(row.get("total_vendido_impreso_log")),
+		"total_comandas_impreso_log": _to_int(row.get("total_comandas_impreso_log")),
+		"items_vendidos_impreso_log": _to_float(row.get("items_vendidos_impreso_log")),
+		"ticket_promedio_impreso_log": _to_float(row.get("ticket_promedio_impreso_log")),
 		"total_cortesia": _to_float(row.get("total_cortesia")),
 		"items_cortesia": _to_float(row.get("items_cortesia")),
 		"comandas_cortesia": _to_int(row.get("comandas_cortesia")),
@@ -255,19 +263,33 @@ def get_ids_comandas_anuladas(
 	return ids
 
 
-def get_ventas_por_hora(conn: Any, view_name: str, filters: Filters, mode: str):
+def get_ventas_por_hora(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	use_impresion_log: bool = False,
+):
 	"""Ventas por hora (para gráfico)."""
 
-	where_sql, params = build_where(filters, mode)
-	sql = q_ventas_por_hora(view_name, where_sql)
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	sql = q_ventas_por_hora(view_name, where_sql, use_impresion_log=use_impresion_log)
 	return _run_df(conn, sql, params, context="Error ejecutando ventas por hora")
 
 
-def get_ventas_por_categoria(conn: Any, view_name: str, filters: Filters, mode: str):
+def get_ventas_por_categoria(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	use_impresion_log: bool = False,
+):
 	"""Ventas por categoría (para gráfico)."""
 
-	where_sql, params = build_where(filters, mode)
-	sql = q_por_categoria(view_name, where_sql)
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	sql = q_por_categoria(view_name, where_sql, use_impresion_log=use_impresion_log)
 	return _run_df(conn, sql, params, context="Error ejecutando ventas por categoría")
 
 
@@ -278,11 +300,12 @@ def get_ventas_por_usuario(
 	mode: str,
 	*,
 	limit: int = 20,
+	use_impresion_log: bool = False,
 ):
 	"""Ventas por usuario (ranking)."""
 
-	where_sql, params = build_where(filters, mode)
-	sql = q_por_usuario(view_name, where_sql, limit=limit)
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	sql = q_por_usuario(view_name, where_sql, limit=limit, use_impresion_log=use_impresion_log)
 	return _run_df(conn, sql, params, context="Error ejecutando ventas por usuario")
 
 
@@ -292,11 +315,13 @@ def get_top_productos(
 	filters: Filters,
 	mode: str,
 	limit: int = 20,
+	*,
+	use_impresion_log: bool = False,
 ):
 	"""Top productos por total vendido (para gráfico)."""
 
-	where_sql, params = build_where(filters, mode)
-	sql = q_top_productos(view_name, where_sql, limit=limit)
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	sql = q_top_productos(view_name, where_sql, limit=limit, use_impresion_log=use_impresion_log)
 	return _run_df(conn, sql, params, context="Error ejecutando top productos")
 
 

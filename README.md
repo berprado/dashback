@@ -30,6 +30,8 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
    - *Histórico* usando `comandas_v6_todas`, con filtros por **rango de operativas** o **rango de fechas**.
 - **KPIs**: total vendido, comandas, ítems, ticket promedio.
    - “Ventas” se calcula solo para comandas finalizadas: `tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
+   - Incluye un **diagnóstico opcional** para comparar vs el log de impresión (cuando `estado_impresion` queda `NULL` en `bar_comanda`).
+   - Incluye un toggle “Ventas: usar log de impresión” para calcular ventas/gráficos aceptando IMPRESO vía `vw_comanda_ultima_impresion`.
 - **Tooltips/ayudas en KPIs**: cada métrica explica qué mide, qué incluye/excluye y el contexto (vista + filtros) para evitar ambigüedades.
 - **Formato Bolivia (moneda)**: montos en `Bs 1.100,33` (miles con punto, decimales con coma) y conteos en `1.100`.
 - **Actividad (tiempo real / histórico)**: última comanda, minutos desde la última, y ritmo de emisión (mediana entre comandas para últimas 10 y para el rango completo).
@@ -42,7 +44,7 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 - **Gráficos (2 columnas)**: ventas por hora, por categoría, top productos, ventas por usuario.
 - **Detalle** (últimas 500 filas) bajo demanda.
    - Nota: las columnas monetarias del detalle se formatean como texto para asegurar consistencia visual; por eso, si ordenas esas columnas, el orden puede ser **lexicográfico** (texto) en lugar de numérico.
-- **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas requeridas.
+- **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas/objetos requeridos (incluye log de impresión).
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
 
 ## Seguridad / Producción

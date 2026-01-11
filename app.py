@@ -35,6 +35,14 @@ probar, connection_name = render_sidebar_connection_section()
 with st.sidebar:
     st.header("Debug")
     debug_sql = st.checkbox("Mostrar SQL/params en errores", value=False)
+    ventas_use_impresion_log = st.checkbox(
+        "Ventas: usar log de impresión",
+        value=False,
+        help=(
+            "Si está activo, ventas/gráficos se calculan aceptando IMPRESO cuando la vista lo marca como IMPRESO "
+            "o cuando vw_comanda_ultima_impresion indica IMPRESO. Útil cuando bar_comanda.estado_impresion queda NULL."
+        ),
+    )
 
 
 def _maybe_render_sql_debug(exc: Exception) -> None:
@@ -215,36 +223,101 @@ else:
     try:
         kpis = get_kpis(conn, startup.view_name, filters, mode_for_metrics)
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric(
-            "Total vendido",
-            format_bs(kpis["total_vendido"]),
-            help=(
+
+        total_vendido = (
+            float(kpis.get("total_vendido_impreso_log") or 0)
+            if ventas_use_impresion_log
+            else float(kpis.get("total_vendido") or 0)
+        )
+        total_comandas = (
+            int(kpis.get("total_comandas_impreso_log") or 0)
+            if ventas_use_impresion_log
+            else int(kpis.get("total_comandas") or 0)
+        )
+        items_vendidos = (
+            float(kpis.get("items_vendidos_impreso_log") or 0)
+            if ventas_use_impresion_log
+            else float(kpis.get("items_vendidos") or 0)
+        )
+        ticket_promedio = (
+            float(kpis.get("ticket_promedio_impreso_log") or 0)
+            if ventas_use_impresion_log
+            else float(kpis.get("ticket_promedio") or 0)
+        )
+
+        ventas_help = (
+            "Ventas finalizadas (tipo_salida='VENTA', estado_comanda='PROCESADO') con señal de IMPRESO: "
+            "se acepta IMPRESO si la vista lo marca como IMPRESO o si vw_comanda_ultima_impresion indica IMPRESO."
+            if ventas_use_impresion_log
+            else (
                 "Ventas finalizadas (tipo_salida='VENTA', estado_comanda='PROCESADO', estado_impresion='IMPRESO'): "
                 "suma de sub_total en el contexto seleccionado."
-            ),
+            )
+        )
+
+        c1.metric(
+            "Total vendido",
+            format_bs(total_vendido),
+            help=ventas_help,
             border=True,
         )
         c2.metric(
             "Comandas",
-            format_int(kpis["total_comandas"]),
+            format_int(total_comandas),
             help=(
-                "Ventas finalizadas (VENTA/PROCESADO/IMPRESO): cantidad de comandas distintas "
-                "(COUNT DISTINCT id_comanda)."
+                "Ventas finalizadas (VENTA/PROCESADO) con señal de IMPRESO según el modo actual: "
+                "cantidad de comandas distintas (COUNT DISTINCT id_comanda)."
             ),
             border=True,
         )
         c3.metric(
             "Ítems",
-            format_int(kpis["items_vendidos"]),
-            help="Ventas finalizadas (VENTA/PROCESADO/IMPRESO): suma de cantidades (SUM cantidad).",
+            format_int(items_vendidos),
+            help=(
+                "Ventas finalizadas (VENTA/PROCESADO) con señal de IMPRESO según el modo actual: "
+                "suma de cantidades (SUM cantidad)."
+            ),
             border=True,
         )
         c4.metric(
             "Ticket promedio",
-            format_bs(kpis["ticket_promedio"]),
-            help="Ventas finalizadas: total vendido / comandas (redondeado).",
+            format_bs(ticket_promedio),
+            help="Ventas finalizadas (según el modo actual): total vendido / comandas (redondeado).",
             border=True,
         )
+
+        with st.expander("Diagnóstico de impresión (impacto en ventas)", expanded=False):
+            st.caption(
+                "Compara la venta finalizada estricta (estado_impresion='IMPRESO' en la vista) vs una señal "
+                "'efectiva' que además toma el último estado del log de impresión (vw_comanda_ultima_impresion)."
+            )
+            d1, d2, d3 = st.columns(3)
+
+            total_log = float(kpis.get("total_vendido_impreso_log") or 0)
+            total_strict = float(kpis.get("total_vendido") or 0)
+            delta = total_log - total_strict
+
+            d1.metric(
+                "Total vendido (con log)",
+                format_bs(total_log),
+                help=(
+                    "Ventas finalizadas donde se acepta IMPRESO si la vista lo marca como IMPRESO "
+                    "o si vw_comanda_ultima_impresion indica IMPRESO para la comanda."
+                ),
+                border=True,
+            )
+            d2.metric(
+                "Comandas (con log)",
+                format_int(kpis.get("total_comandas_impreso_log") or 0),
+                help="COUNT DISTINCT id_comanda bajo la misma regla 'con log'.",
+                border=True,
+            )
+            d3.metric(
+                "Delta vs estricto",
+                format_bs(delta),
+                help="Diferencia: total vendido (con log) - total vendido (estricto).",
+                border=True,
+            )
 
         try:
             act = get_actividad_emision_comandas(
@@ -476,13 +549,20 @@ g1, g2 = st.columns(2)
 with g1:
     st.subheader("Ventas por hora")
     st.caption(
-        "Ventas finalizadas (VENTA/PROCESADO/IMPRESO) agrupadas por HOUR(fecha_emision) en el contexto actual."
+        "Ventas finalizadas agrupadas por HOUR(fecha_emision) en el contexto actual "
+        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
     )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver ventas por hora.")
     else:
         try:
-            por_hora = get_ventas_por_hora(conn, startup.view_name, filters, mode_for_metrics)
+            por_hora = get_ventas_por_hora(
+                conn,
+                startup.view_name,
+                filters,
+                mode_for_metrics,
+                use_impresion_log=ventas_use_impresion_log,
+            )
             if por_hora is None or por_hora.empty:
                 if startup.mode == "realtime" and not startup.has_rows:
                     st.info("Aún no se registraron ventas en esta operativa.")
@@ -498,13 +578,20 @@ with g1:
 with g2:
     st.subheader("Ventas por categoría")
     st.caption(
-        "Ventas finalizadas (VENTA/PROCESADO/IMPRESO) agrupadas por categoría en el contexto actual."
+        "Ventas finalizadas agrupadas por categoría en el contexto actual "
+        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
     )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver ventas por categoría.")
     else:
         try:
-            por_categoria = get_ventas_por_categoria(conn, startup.view_name, filters, mode_for_metrics)
+            por_categoria = get_ventas_por_categoria(
+                conn,
+                startup.view_name,
+                filters,
+                mode_for_metrics,
+                use_impresion_log=ventas_use_impresion_log,
+            )
             if por_categoria is None or por_categoria.empty:
                 st.info("Sin datos para el rango seleccionado.")
             else:
@@ -519,13 +606,21 @@ g3, g4 = st.columns(2)
 with g3:
     st.subheader("Top productos")
     st.caption(
-        "Ranking por total vendido de ventas finalizadas (VENTA/PROCESADO/IMPRESO) en el contexto actual."
+        "Ranking por total vendido de ventas finalizadas en el contexto actual "
+        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
     )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver top productos.")
     else:
         try:
-            top = get_top_productos(conn, startup.view_name, filters, mode_for_metrics, limit=20)
+            top = get_top_productos(
+                conn,
+                startup.view_name,
+                filters,
+                mode_for_metrics,
+                limit=20,
+                use_impresion_log=ventas_use_impresion_log,
+            )
             if top is None or top.empty:
                 st.info("Sin datos para el rango seleccionado.")
             else:
@@ -538,13 +633,21 @@ with g3:
 with g4:
     st.subheader("Ventas por usuario")
     st.caption(
-        "Ranking por total vendido de ventas finalizadas (VENTA/PROCESADO/IMPRESO) en el contexto actual."
+        "Ranking por total vendido de ventas finalizadas en el contexto actual "
+        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
     )
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver ventas por usuario.")
     else:
         try:
-            por_usuario = get_ventas_por_usuario(conn, startup.view_name, filters, mode_for_metrics, limit=20)
+            por_usuario = get_ventas_por_usuario(
+                conn,
+                startup.view_name,
+                filters,
+                mode_for_metrics,
+                limit=20,
+                use_impresion_log=ventas_use_impresion_log,
+            )
             if por_usuario is None or por_usuario.empty:
                 st.info("Sin datos para el rango seleccionado.")
             else:

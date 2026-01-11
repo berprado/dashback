@@ -63,6 +63,15 @@ WHERE mt.id IN (6, 7, 10, 15);
 - `PENDIENTE`: estado temporal (en cola/por procesar).
 - `NULL`: puede indicar que aún no fue procesada/impresa; también aparece en comandas **anuladas**.
 
+Nota importante (caso real observado):
+- Puede ocurrir que la **impresión física** suceda, pero `bar_comanda.estado_impresion` quede `NULL` por un tiempo.
+- En esos casos, `comandas_v6` reflejará `NULL` (porque depende de `bar_comanda`), pero el log
+  `vw_comanda_ultima_impresion` / `bar_comanda_impresion` puede ya indicar `IMPRESO`.
+- La vista `comandas_v7` está construida desde el log (`vw_comanda_ultima_impresion`) y tiende a mostrar un estado
+  “efectivo” (por ejemplo, `IMPRESO` aun cuando `bar_comanda.estado_impresion` es `NULL`).
+
+Por eso, en la UI existe un expander de diagnóstico para comparar “Ventas finalizadas estrictas” vs “Ventas con log”.
+
 Regla práctica:
 - Para identificar anuladas, usar `estado_comanda='ANULADO'` (suele venir con `estado_impresion=NULL`).
 - Para identificar pendientes de impresión, usar `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
@@ -515,6 +524,12 @@ Nota de estados (implementación actual):
 Definición de “Ventas” (implementación actual):
 - Para KPIs y gráficos de ventas, se consideran solo comandas finalizadas:
   `tipo_salida='VENTA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
+
+Opción operativa (implementación actual, toggle en UI):
+- Existe un checkbox “Ventas: usar log de impresión”.
+- Cuando está activo, se acepta `IMPRESO` si la vista lo marca como `IMPRESO` **o** si el log
+  (`vw_comanda_ultima_impresion`) indica `IMPRESO`.
+- Útil cuando `bar_comanda.estado_impresion` queda `NULL` aunque la impresión física ya ocurrió.
 
 ### 4.3 Controles de rendimiento
 - No cargar detalle si el usuario no lo solicita (tabs/expander).

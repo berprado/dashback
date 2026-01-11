@@ -20,6 +20,9 @@ FROM (
     SELECT 'comandas_v6' AS object_name
     UNION ALL SELECT 'comandas_v6_todas'
     UNION ALL SELECT 'comandas_v6_base'
+    UNION ALL SELECT 'comandas_v7'
+    UNION ALL SELECT 'vw_comanda_ultima_impresion'
+    UNION ALL SELECT 'bar_comanda_impresion'
 ) req
 LEFT JOIN information_schema.TABLES t
     ON t.TABLE_SCHEMA = DATABASE()
@@ -94,7 +97,12 @@ class Filters:
     dt_fin: str | None = None
 
 
-def build_where(filters: Filters, mode: str) -> tuple[str, dict[str, Any]]:
+def build_where(
+    filters: Filters,
+    mode: str,
+    *,
+    table_alias: str | None = None,
+) -> tuple[str, dict[str, Any]]:
     """Construye WHERE + params.
 
     mode:
@@ -106,16 +114,19 @@ def build_where(filters: Filters, mode: str) -> tuple[str, dict[str, Any]]:
     clauses: list[str] = []
     params: dict[str, Any] = {}
 
+    def _col(name: str) -> str:
+        return f"{table_alias}.{name}" if table_alias else name
+
     if mode == "ops":
         if filters.op_ini is None or filters.op_fin is None:
             raise ValueError("mode='ops' requiere op_ini y op_fin")
-        clauses.append("id_operacion BETWEEN :op_ini AND :op_fin")
+        clauses.append(f"{_col('id_operacion')} BETWEEN :op_ini AND :op_fin")
         params["op_ini"] = int(filters.op_ini)
         params["op_fin"] = int(filters.op_fin)
     elif mode == "dates":
         if filters.dt_ini is None or filters.dt_fin is None:
             raise ValueError("mode='dates' requiere dt_ini y dt_fin")
-        clauses.append("fecha_emision BETWEEN :dt_ini AND :dt_fin")
+        clauses.append(f"{_col('fecha_emision')} BETWEEN :dt_ini AND :dt_fin")
         params["dt_ini"] = filters.dt_ini
         params["dt_fin"] = filters.dt_fin
     elif mode == "none":
@@ -139,41 +150,94 @@ def _to_mysqlconnector_paramstyle(query: str) -> str:
     return _SQLA_PARAM_RE.sub(r"%(\1)s", query)
 
 
-# Condición de "venta" finalizada según la vista (fuente de verdad):
-# - tipo_salida = VENTA
-# - estado_comanda = PROCESADO
-# - estado_impresion = IMPRESO
-_COND_VENTA_FINAL = (
-    "UPPER(COALESCE(tipo_salida, '')) = 'VENTA' "
-    "AND estado_comanda = 'PROCESADO' "
-    "AND estado_impresion = 'IMPRESO'"
-)
+def _cond_venta_final(table_alias: str | None = None) -> str:
+    """Condición de venta finalizada (criterio estricto por vista).
 
-# Análogo para cortesías "finalizadas" (mismo criterio operativo, distinto tipo_salida).
-_COND_CORTESIA_FINAL = (
-    "UPPER(COALESCE(tipo_salida, '')) = 'CORTESIA' "
-    "AND estado_comanda = 'PROCESADO' "
-    "AND estado_impresion = 'IMPRESO'"
-)
+    Regla:
+    - tipo_salida = VENTA
+    - estado_comanda = PROCESADO
+    - estado_impresion = IMPRESO
+    """
+
+    p = f"{table_alias}." if table_alias else ""
+    return (
+        f"UPPER(COALESCE({p}tipo_salida, '')) = 'VENTA' "
+        f"AND {p}estado_comanda = 'PROCESADO' "
+        f"AND {p}estado_impresion = 'IMPRESO'"
+    )
+
+
+def _cond_cortesia_final(table_alias: str | None = None) -> str:
+    """Condición de cortesía finalizada (criterio estricto por vista)."""
+
+    p = f"{table_alias}." if table_alias else ""
+    return (
+        f"UPPER(COALESCE({p}tipo_salida, '')) = 'CORTESIA' "
+        f"AND {p}estado_comanda = 'PROCESADO' "
+        f"AND {p}estado_impresion = 'IMPRESO'"
+    )
 
 
 def q_kpis(view_name: str, where_sql: str) -> str:
+    cond_venta = _cond_venta_final("v")
+    cond_cortesia = _cond_cortesia_final("v")
+
+    # Variante "efectiva" para ventas finalizadas, usando el log (vw_comanda_ultima_impresion)
+    # como señal alternativa cuando bar_comanda.estado_impresion está NULL.
+    cond_venta_impreso_log = (
+        "UPPER(COALESCE(v.tipo_salida, '')) = 'VENTA' "
+        "AND v.estado_comanda = 'PROCESADO' "
+        "AND (v.estado_impresion = 'IMPRESO' OR ei_log.nombre = 'IMPRESO')"
+    )
+
     return f"""
     SELECT
-            COALESCE(SUM(CASE WHEN {_COND_VENTA_FINAL} THEN sub_total ELSE 0 END), 0) AS total_vendido,
-            COUNT(DISTINCT CASE WHEN {_COND_VENTA_FINAL} THEN id_comanda END)  AS total_comandas,
-            COALESCE(SUM(CASE WHEN {_COND_VENTA_FINAL} THEN cantidad ELSE 0 END), 0)  AS items_vendidos,
+            COALESCE(SUM(CASE WHEN {cond_venta} THEN v.sub_total ELSE 0 END), 0) AS total_vendido,
+            COUNT(DISTINCT CASE WHEN {cond_venta} THEN v.id_comanda END)  AS total_comandas,
+            COALESCE(SUM(CASE WHEN {cond_venta} THEN v.cantidad ELSE 0 END), 0)  AS items_vendidos,
             ROUND(
-                COALESCE(SUM(CASE WHEN {_COND_VENTA_FINAL} THEN sub_total ELSE 0 END), 0)
-                / NULLIF(COUNT(DISTINCT CASE WHEN {_COND_VENTA_FINAL} THEN id_comanda END), 0),
+                COALESCE(SUM(CASE WHEN {cond_venta} THEN v.sub_total ELSE 0 END), 0)
+                / NULLIF(COUNT(DISTINCT CASE WHEN {cond_venta} THEN v.id_comanda END), 0),
                 2
             ) AS ticket_promedio
 
             ,COALESCE(
+                SUM(CASE WHEN {cond_venta_impreso_log} THEN v.sub_total ELSE 0 END),
+                0
+            ) AS total_vendido_impreso_log
+
+            ,COUNT(
+                DISTINCT CASE
+                    WHEN {cond_venta_impreso_log} THEN v.id_comanda
+                END
+            ) AS total_comandas_impreso_log
+
+            ,COALESCE(
+                SUM(CASE WHEN {cond_venta_impreso_log} THEN v.cantidad ELSE 0 END),
+                0
+            ) AS items_vendidos_impreso_log
+
+            ,ROUND(
+                COALESCE(
+                    SUM(CASE WHEN {cond_venta_impreso_log} THEN v.sub_total ELSE 0 END),
+                    0
+                )
+                / NULLIF(
+                    COUNT(
+                        DISTINCT CASE
+                            WHEN {cond_venta_impreso_log} THEN v.id_comanda
+                        END
+                    ),
+                    0
+                ),
+                2
+            ) AS ticket_promedio_impreso_log
+
+            ,COALESCE(
                 SUM(
                     CASE
-                        WHEN {_COND_CORTESIA_FINAL}
-                            THEN COALESCE(cor_subtotal_anterior, sub_total, 0)
+                        WHEN {cond_cortesia}
+                            THEN COALESCE(v.cor_subtotal_anterior, v.sub_total, 0)
                         ELSE 0
                     END
                 ),
@@ -182,19 +246,42 @@ def q_kpis(view_name: str, where_sql: str) -> str:
 
             ,COUNT(
                 DISTINCT CASE
-                    WHEN {_COND_CORTESIA_FINAL} THEN id_comanda
+                    WHEN {cond_cortesia} THEN v.id_comanda
                 END
             ) AS comandas_cortesia
 
             ,COALESCE(
                 SUM(
-                    CASE WHEN {_COND_CORTESIA_FINAL} THEN cantidad ELSE 0 END
+                    CASE WHEN {cond_cortesia} THEN v.cantidad ELSE 0 END
                 ),
                 0
             ) AS items_cortesia
-    FROM {view_name}
+    FROM {view_name} v
+    LEFT JOIN vw_comanda_ultima_impresion imp
+        ON imp.id_comanda = v.id_comanda
+    LEFT JOIN parameter_table ei_log
+        ON ei_log.id = imp.ind_estado_impresion
+       AND ei_log.id_master = 10
+       AND ei_log.estado = 'HAB'
     {where_sql};
     """
+
+
+def _cond_venta_final_impreso_log() -> str:
+    """Condición 'efectiva' de venta finalizada usando log de impresión.
+
+    Se interpreta como finalizada si:
+    - es venta y está PROCESADO
+    - y (la vista marca IMPRESO o el último log marca IMPRESO)
+
+    Requiere que el query tenga alias `v` para la vista y `ei_log` para el nombre del estado desde log.
+    """
+
+    return (
+        "UPPER(COALESCE(v.tipo_salida, '')) = 'VENTA' "
+        "AND v.estado_comanda = 'PROCESADO' "
+        "AND (v.estado_impresion = 'IMPRESO' OR ei_log.nombre = 'IMPRESO')"
+    )
 
 
 def q_estado_operativo(view_name: str, where_sql: str) -> str:
@@ -292,64 +379,126 @@ def q_ids_comandas_anuladas(view_name: str, where_sql: str, limit: int = 50) -> 
 		"""
 
 
-def q_ventas_por_hora(view_name: str, where_sql: str) -> str:
-    where2 = _append_condition(where_sql, _COND_VENTA_FINAL)
+def q_ventas_por_hora(view_name: str, where_sql: str, *, use_impresion_log: bool = False) -> str:
+    cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
+    where2 = _append_condition(where_sql, cond)
+
+    join_sql = ""
+    if use_impresion_log:
+        join_sql = """
+        LEFT JOIN vw_comanda_ultima_impresion imp
+            ON imp.id_comanda = v.id_comanda
+        LEFT JOIN parameter_table ei_log
+            ON ei_log.id = imp.ind_estado_impresion
+           AND ei_log.id_master = 10
+           AND ei_log.estado = 'HAB'
+        """
+
     return f"""
         SELECT
-            HOUR(fecha_emision) AS hora,
-            COALESCE(SUM(sub_total), 0) AS total_vendido,
-            COUNT(DISTINCT id_comanda) AS comandas,
-            COALESCE(SUM(cantidad), 0) AS items
-        FROM {view_name}
-    {where2}
-        GROUP BY HOUR(fecha_emision)
+            HOUR(v.fecha_emision) AS hora,
+            COALESCE(SUM(v.sub_total), 0) AS total_vendido,
+            COUNT(DISTINCT v.id_comanda) AS comandas,
+            COALESCE(SUM(v.cantidad), 0) AS items
+        FROM {view_name} v
+        {join_sql}
+        {where2}
+        GROUP BY HOUR(v.fecha_emision)
         ORDER BY hora;
         """
 
 
-def q_por_categoria(view_name: str, where_sql: str) -> str:
-    where2 = _append_condition(where_sql, _COND_VENTA_FINAL)
+def q_por_categoria(view_name: str, where_sql: str, *, use_impresion_log: bool = False) -> str:
+    cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
+    where2 = _append_condition(where_sql, cond)
+
+    join_sql = ""
+    if use_impresion_log:
+        join_sql = """
+        LEFT JOIN vw_comanda_ultima_impresion imp
+            ON imp.id_comanda = v.id_comanda
+        LEFT JOIN parameter_table ei_log
+            ON ei_log.id = imp.ind_estado_impresion
+           AND ei_log.id_master = 10
+           AND ei_log.estado = 'HAB'
+        """
+
     return f"""
         SELECT
-            COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
-            COALESCE(SUM(sub_total), 0) AS total_vendido,
-            COALESCE(SUM(cantidad), 0)  AS unidades,
-            COUNT(DISTINCT id_comanda)  AS comandas
-        FROM {view_name}
-    {where2}
-        GROUP BY COALESCE(categoria, 'SIN CATEGORIA')
+            COALESCE(v.categoria, 'SIN CATEGORIA') AS categoria,
+            COALESCE(SUM(v.sub_total), 0) AS total_vendido,
+            COALESCE(SUM(v.cantidad), 0)  AS unidades,
+            COUNT(DISTINCT v.id_comanda)  AS comandas
+        FROM {view_name} v
+        {join_sql}
+        {where2}
+        GROUP BY COALESCE(v.categoria, 'SIN CATEGORIA')
         ORDER BY total_vendido DESC;
         """
 
 
-def q_top_productos(view_name: str, where_sql: str, limit: int = 20) -> str:
-    where2 = _append_condition(where_sql, _COND_VENTA_FINAL)
+def q_top_productos(
+    view_name: str,
+    where_sql: str,
+    limit: int = 20,
+    *,
+    use_impresion_log: bool = False,
+) -> str:
+    cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
+    where2 = _append_condition(where_sql, cond)
+
+    join_sql = ""
+    if use_impresion_log:
+        join_sql = """
+        LEFT JOIN vw_comanda_ultima_impresion imp
+            ON imp.id_comanda = v.id_comanda
+        LEFT JOIN parameter_table ei_log
+            ON ei_log.id = imp.ind_estado_impresion
+           AND ei_log.id_master = 10
+           AND ei_log.estado = 'HAB'
+        """
+
     return f"""
         SELECT
-            nombre,
-            COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
-            COALESCE(SUM(cantidad), 0) AS unidades,
-            COALESCE(SUM(sub_total), 0) AS total_vendido
-        FROM {view_name}
-    {where2}
-        GROUP BY nombre, COALESCE(categoria, 'SIN CATEGORIA')
+            v.nombre,
+            COALESCE(v.categoria, 'SIN CATEGORIA') AS categoria,
+            COALESCE(SUM(v.cantidad), 0) AS unidades,
+            COALESCE(SUM(v.sub_total), 0) AS total_vendido
+        FROM {view_name} v
+        {join_sql}
+        {where2}
+        GROUP BY v.nombre, COALESCE(v.categoria, 'SIN CATEGORIA')
         ORDER BY total_vendido DESC
         LIMIT {int(limit)};
         """
 
 
-def q_por_usuario(view_name: str, where_sql: str, limit: int = 20) -> str:
-    where2 = _append_condition(where_sql, _COND_VENTA_FINAL)
+def q_por_usuario(view_name: str, where_sql: str, limit: int = 20, *, use_impresion_log: bool = False) -> str:
+    cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
+    where2 = _append_condition(where_sql, cond)
+
+    join_sql = ""
+    if use_impresion_log:
+        join_sql = """
+        LEFT JOIN vw_comanda_ultima_impresion imp
+            ON imp.id_comanda = v.id_comanda
+        LEFT JOIN parameter_table ei_log
+            ON ei_log.id = imp.ind_estado_impresion
+           AND ei_log.id_master = 10
+           AND ei_log.estado = 'HAB'
+        """
+
     return f"""
         SELECT
-            COALESCE(usuario_reg, 'SIN USUARIO') AS usuario_reg,
-            COALESCE(SUM(sub_total), 0) AS total_vendido,
-            COUNT(DISTINCT id_comanda)  AS comandas,
-            COALESCE(SUM(cantidad), 0)  AS items,
-            ROUND(COALESCE(SUM(sub_total), 0) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio
-        FROM {view_name}
-    {where2}
-        GROUP BY COALESCE(usuario_reg, 'SIN USUARIO')
+            COALESCE(v.usuario_reg, 'SIN USUARIO') AS usuario_reg,
+            COALESCE(SUM(v.sub_total), 0) AS total_vendido,
+            COUNT(DISTINCT v.id_comanda)  AS comandas,
+            COALESCE(SUM(v.cantidad), 0)  AS items,
+            ROUND(COALESCE(SUM(v.sub_total), 0) / NULLIF(COUNT(DISTINCT v.id_comanda), 0), 2) AS ticket_promedio
+        FROM {view_name} v
+        {join_sql}
+        {where2}
+        GROUP BY COALESCE(v.usuario_reg, 'SIN USUARIO')
         ORDER BY total_vendido DESC
         LIMIT {int(limit)};
         """
