@@ -7,6 +7,7 @@ from src.query_store import (
 	build_where,
 	fetch_dataframe,
 	q_comandas_emision_times,
+	q_impresion_snapshot,
 	q_ids_comandas_anuladas,
 	q_ids_comandas_impresion_pendiente,
 	q_ids_comandas_no_impresas,
@@ -312,6 +313,12 @@ def get_detalle(
 	where_sql, params = build_where(filters, mode)
 	sql = q_detalle(view_name, where_sql, limit=limit)
 	return _run_df(conn, sql, params, context="Error ejecutando detalle")
+
+
+def get_impresion_snapshot(conn: Any, view_name: str, ids: list[int]):
+	"""Devuelve un snapshot de estados de impresión para depuración."""
+	sql = q_impresion_snapshot(view_name, ids)
+	return _run_df(conn, sql, {}, context="Error ejecutando snapshot de impresión")
 
 
 def _median_minutes_between(series) -> tuple[float | None, int]:

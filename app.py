@@ -13,6 +13,7 @@ from src.metrics import (
     get_ids_comandas_pendientes,
     get_ids_comandas_sin_estado_impresion,
     get_kpis,
+    get_impresion_snapshot,
     get_top_productos,
     get_ventas_por_categoria,
     get_ventas_por_hora,
@@ -450,6 +451,22 @@ else:
                 i4.caption("Anuladas")
                 i4.caption(f"Mostrando {len(ids_anul)} (límite {int(limit)})")
                 i4.code(", ".join(map(str, ids_anul)) if ids_anul else "—")
+
+                st.divider()
+                diagnosticar = st.checkbox(
+                    "Diagnosticar estado de impresión de estos IDs",
+                    value=False,
+                    key="estado_operativo_diag_impresion",
+                    help=(
+                        "Cruza lo que devuelve la vista del dashboard (estado_impresion) con "
+                        "bar_comanda.estado_impresion y el último log (vw_comanda_ultima_impresion). "
+                        "Útil para entender por qué una comanda aparece como PENDIENTE/NULL en la vista."
+                    ),
+                )
+                if diagnosticar:
+                    ids_all = sorted(set(ids_pend + ids_imp_pend + ids_sin_ei + ids_anul))
+                    snap = get_impresion_snapshot(conn, startup.view_name, ids_all)
+                    st.dataframe(snap, width="stretch")
     except Exception as exc:
         st.error(f"Error cargando estado operativo: {exc}")
         _maybe_render_sql_debug(exc)

@@ -419,6 +419,68 @@ def q_comandas_emision_times(view_name: str, where_sql: str, *, limit: int | Non
         """
 
 
+def q_impresion_snapshot(view_name: str, ids: list[int]) -> str:
+    """Snapshot de estados de impresión para depuración.
+
+    Compara tres señales:
+    - `estado_impresion` tal como lo entrega la vista del dashboard (v6/v6_todas).
+    - `bar_comanda.estado_impresion` (ID) + su nombre (parameter_table id_master=10).
+    - último registro de impresión (vw_comanda_ultima_impresion) + su nombre.
+
+    Nota: `ids` se incrusta como lista de enteros (sanitizados) para permitir IN (...)
+    sin pelear con la parametrización de listas en MySQL/SQLAlchemy.
+    """
+
+    safe_ids = [int(x) for x in ids if x is not None]
+    if not safe_ids:
+        return "SELECT NULL AS id_comanda WHERE 1=0;"
+
+    ids_sql = ", ".join(map(str, safe_ids))
+
+    return f"""
+    SELECT
+        t.id_comanda,
+        t.id_operacion,
+        t.fecha_emision_ult,
+        t.estado_comanda AS estado_comanda_vista,
+        t.estado_impresion AS estado_impresion_vista,
+
+        CASE WHEN bc.id IS NULL THEN 0 ELSE 1 END AS exists_en_bar_comanda,
+
+        bc.estado_impresion AS estado_impresion_id_bar_comanda,
+        pti.nombre AS estado_impresion_bar_comanda,
+
+        CASE WHEN vui.id_comanda IS NULL THEN 0 ELSE 1 END AS exists_en_log_impresion,
+
+        vui.ind_estado_impresion AS estado_impresion_id_log,
+        pti2.nombre AS estado_impresion_log
+    FROM (
+        SELECT
+            id_comanda,
+            MAX(id_operacion) AS id_operacion,
+            MAX(fecha_emision) AS fecha_emision_ult,
+            MAX(estado_comanda) AS estado_comanda,
+            MAX(estado_impresion) AS estado_impresion
+        FROM {view_name}
+        WHERE id_comanda IN ({ids_sql})
+        GROUP BY id_comanda
+    ) t
+    LEFT JOIN bar_comanda bc
+        ON bc.id = t.id_comanda
+    LEFT JOIN parameter_table pti
+        ON pti.id = bc.estado_impresion
+       AND pti.id_master = 10
+       AND pti.estado = 'HAB'
+    LEFT JOIN vw_comanda_ultima_impresion vui
+        ON vui.id_comanda = t.id_comanda
+    LEFT JOIN parameter_table pti2
+        ON pti2.id = vui.ind_estado_impresion
+       AND pti2.id_master = 10
+       AND pti2.estado = 'HAB'
+    ORDER BY t.id_comanda DESC;
+    """
+
+
 def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
     """Ejecuta un SELECT y devuelve el resultado como DataFrame.
 
