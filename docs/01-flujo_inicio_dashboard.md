@@ -49,7 +49,9 @@ La app intenta encontrar una operativa activa (22/24).
 ## 🟢 Caso 1: existe operativa activa (22/24)
 
 ### Dataset utilizado
-- `adminerp_copy.comandas_v6`
+- `comandas_v6`
+
+> Nota: el esquema depende de la DB activa definida en la URL de conexión; en el código se usan nombres no calificados.
 
 > Esta vista ya está acotada a la **última operativa activa**.
 
@@ -82,7 +84,9 @@ Esto sucede cuando existe la operativa pero aún no hay comandas registradas.
 - O no existe ninguna operativa activa (22/24)
 
 ### Dataset utilizado
-- `adminerp_copy.comandas_v6_todas`
+- `comandas_v6_todas`
+
+> Nota: el esquema depende de la DB activa definida en la URL de conexión; en el código se usan nombres no calificados.
 
 ⚠️ Importante: para histórico, la app **siempre debe aplicar filtros**, por ejemplo:
 

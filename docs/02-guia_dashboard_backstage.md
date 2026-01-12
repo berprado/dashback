@@ -105,6 +105,8 @@ Reglas clave que deben aparecer explícitas cuando aplique:
 
 > Ejecutar en MySQL:
 
+> Nota: los ejemplos de esta sección usan `adminerp_copy` como referencia. En el dashboard (Python) se usan nombres no calificados (ej. `comandas_v6`) y el esquema real lo define la DB activa en la URL de conexión.
+
 ```sql
 CREATE
   DEFINER = 'root'@'localhost'

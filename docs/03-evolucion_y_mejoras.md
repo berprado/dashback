@@ -191,7 +191,7 @@ También se actualizó la UI para usar `width="stretch"` en tablas/gráficos en 
 Se fortaleció la validación de conexión con un healthcheck que:
 
 - Confirma la DB activa (`DATABASE()`).
-- Verifica la existencia de vistas requeridas (`comandas_v6`, `comandas_v6_todas`, `comandas_v6_base`).
+- Verifica la existencia de vistas/tablas requeridas (`comandas_v6`, `comandas_v6_todas`, `comandas_v6_base`, `comandas_v7`, `vw_comanda_ultima_impresion`, `bar_comanda_impresion`).
 
 Diagnóstico controlado:
 

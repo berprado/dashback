@@ -3,6 +3,7 @@
 ## Contexto rápido
 - App Streamlit (v1.52.2) en [app.py](../app.py) contra MySQL 5.6.12.
 - Fuente de datos por vistas: `comandas_v6` (tiempo real) y `comandas_v6_todas`/`comandas_v6_base` (histórico).
+- Diagnóstico/impresión: `vw_comanda_ultima_impresion` y `bar_comanda_impresion` pueden usarse como señal alternativa de IMPRESO cuando `bar_comanda.estado_impresion` queda NULL (la UI incluye un toggle opcional para esto).
 - Arquitectura por capas en `src/` (no usar `config/`, `data/`, `components/`).
 
 ## Flujo principal (de extremo a extremo)
@@ -67,7 +68,7 @@ Nota: en la tabla detalle, las columnas monetarias se formatean como texto para 
 ## Workflows para dev/debug
 - Ejecutar: `streamlit run app.py`.
 - Ejecutar (auto-reload al guardar): `streamlit run app.py --server.runOnSave true`.
-- Healthcheck UI: botón “Probar conexión” (usa `Q_HEALTHCHECK` y valida existencia de vistas).
+- Healthcheck UI: botón “Probar conexión” (usa `Q_HEALTHCHECK` y valida existencia de vistas/objetos requeridos, incluyendo señales del log de impresión).
 - Debug de SQL: activar el checkbox “Mostrar SQL/params en errores” (renderiza `QueryExecutionError.sql` y `.params`).
 
 ## Dónde tocar para agregar una métrica
