@@ -1,29 +1,82 @@
 # Dashback
 
-Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
+<p align="center">
+   <strong>Dashboard operativo en Streamlit conectado a MySQL 5.6</strong>
+</p>
 
-## Requisitos
+<p align="center">
+   <a href="https://www.python.org/">
+      <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
+   </a>
+   <a href="https://streamlit.io/">
+      <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-1.53.0-FF4B4B?logo=streamlit&logoColor=white">
+   </a>
+   <a href="https://www.mysql.com/">
+      <img alt="MySQL" src="https://img.shields.io/badge/MySQL-5.6-4479A1?logo=mysql&logoColor=white">
+   </a>
+   <a href="https://pandas.pydata.org/">
+      <img alt="Pandas" src="https://img.shields.io/badge/Pandas-2.x-150458?logo=pandas&logoColor=white">
+   </a>
+   <a href="https://plotly.com/python/">
+      <img alt="Plotly" src="https://img.shields.io/badge/Plotly-6.x-3F4F75?logo=plotly&logoColor=white">
+   </a>
+   <a href="https://www.sqlalchemy.org/">
+      <img alt="SQLAlchemy" src="https://img.shields.io/badge/SQLAlchemy-2.x-D71F00?logo=sqlalchemy&logoColor=white">
+   </a>
+</p>
+
+<p align="center">
+   <a href="https://github.com/berprado/dashback/blob/main/LICENSE">
+      <img alt="Licencia" src="https://img.shields.io/github/license/berprado/dashback?color=blue">
+   </a>
+   <a href="https://github.com/berprado/dashback/commits/main">
+      <img alt="Último commit" src="https://img.shields.io/github/last-commit/berprado/dashback?color=informational">
+   </a>
+</p>
+
+<p align="center">
+   <a href="#-ejecutar">Ejecutar</a>
+   · <a href="#-configuración-de-conexión">Configuración</a>
+   · <a href="#-inicio-rápido">Inicio rápido</a>
+   · <a href="#-documentación">Docs</a>
+   · <a href="#-estructura">Estructura</a>
+</p>
+
+> Nota: cuando haya dudas, la fuente de verdad es el código en `src/`.
+
+## ✅ Requisitos
 - Python 3.10+
-- Streamlit 1.52.2
+- Streamlit 1.53.0
 
-## Configuración de conexión
+## 🚀 Inicio rápido
+1. Instala dependencias:
+   - `pip install -r requirements.txt`
+2. Configura conexión:
+   - `.streamlit/secrets.toml.example` → `.streamlit/secrets.toml`
+3. Ejecuta:
+   - `streamlit run app.py`
+
+## 🔌 Configuración de conexión
 1. Copia el ejemplo:
    - `.streamlit/secrets.toml.example` → `.streamlit/secrets.toml`
 2. Edita el `url` según tu entorno.
 
-## Ejecutar
+## ▶️ Ejecutar
 - `streamlit run app.py`
 
-## Documentación
+## 📚 Documentación
 - [docs/01-flujo_inicio_dashboard.md](docs/01-flujo_inicio_dashboard.md): lógica de arranque (tiempo real vs histórico) y casos límite.
 - [docs/02-guia_dashboard_backstage.md](docs/02-guia_dashboard_backstage.md): guía técnica por etapas + definición de vistas.
 - [docs/03-evolucion_y_mejoras.md](docs/03-evolucion_y_mejoras.md): evolución y cambios implementados (fase 1).
 
-## Estado de implementación
+Capturas:
+- [docs/capturas/](docs/capturas/)
+
+## 🧭 Estado de implementación
 - ✅ Implementado (lo que corre hoy en este repo): conexión por Streamlit Connections, arranque tiempo real/histórico, KPIs/bloques principales, actividad, gráficos y detalle bajo demanda.
 - 🟡 Ideas / futuro: prefacturación, export, sparklines, cache TTL, autenticación/roles (ver "Próximas versiones").
 
-## Funcionalidades actuales
+## ✨ Funcionalidades actuales
 - **Selección de origen de datos** desde el sidebar: Local (`connections.mysql`) o Producción (`connections.mysql_prod`).
 - **Modo automático** al iniciar:
    - *Tiempo real* (operativa activa) usando `comandas_v6`.
@@ -47,18 +100,18 @@ Dashboard operativo en **Streamlit** conectado a **MySQL 5.6**.
 - **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas/objetos requeridos (incluye log de impresión).
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
 
-## Seguridad / Producción
+## 🔒 Seguridad / Producción
 - La app está pensada para operar en **solo lectura** (consultas `SELECT`).
 - En producción, usa credenciales **read-only** siempre que sea posible.
 
-## Estructura
+## 🧱 Estructura
 - `app.py`: entrypoint Streamlit
 - `src/db.py`: conexión vía Streamlit Connections (`st.connection`)
 - `src/query_store.py`: queries (`Q_...`) + `fetch_dataframe`
 - `src/ui/`: layout y componentes UI
 - `docs/`: documentos de referencia de negocio
 
-## Próximas versiones (ideas)
+## 🗺️ Próximas versiones (ideas)
 - Prefacturación (facturado vs no facturado).
 - Exportación de detalle (CSV/Excel) bajo demanda.
 - Sparklines/tendencias en KPIs usando `st.metric(..., chart_data=...)`.

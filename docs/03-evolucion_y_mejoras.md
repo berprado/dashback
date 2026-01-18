@@ -1,4 +1,4 @@
-# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.52.2 + MySQL 5.6.12)
+# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.53.0 + MySQL 5.6.12)
 
 Este documento consolida la evolución del dashboard **Dashback** durante la fase inicial, destacando el crecimiento gradual de métricas/visualizaciones, y las optimizaciones/correcciones aplicadas para operar de forma segura y consistente tanto en **local** como en **producción**.
 
@@ -248,6 +248,10 @@ El dashboard hoy permite:
 - Consultar KPIs, cortesías, estado operativo, gráficos y detalle bajo demanda.
 - Consultar actividad (última comanda / minutos desde última / ritmo de emisión).
 - Validar conexión y vistas desde el healthcheck.
+
+Actualización (documentación):
+- Se ajustó docs/02 para alinear explícitamente qué está implementado hoy (Filters/build_where) y aclarar que el toggle de impresión usa el log (`vw_comanda_ultima_impresion`) vía joins (no consume `comandas_v7`).
+- Pasada editorial en docs/02 y README: separar mejor “Implementado” vs “Referencia/Futuro” y eliminar snippets que no coincidían con el código real.
 
 ---
 

@@ -1,6 +1,6 @@
 # 📊 Guía técnica por etapas — Dashboard Operativo Backstage (Streamlit + MySQL 5.6)
 
-> **Objetivo:** Determinar la informacion que se debe mostrar como vista principal al momento de iniciar la aplicacion.  
+> **Objetivo:** Determinar la información que se debe mostrar como vista principal al momento de iniciar la aplicación.  
 > **Alcance:** dashboard **tiempo real** (operativa activa) + **histórico** (rango de operativas y/o fechas) usando vistas SQL basadas en `bar_comanda`, `bar_detalle_comanda_salida`, `ope_operacion`, `parameter_table`, etc.
 
 ---
@@ -21,11 +21,16 @@ Esta guía mezcla 2 cosas:
 
 Cuando haya dudas, la fuente de verdad es el código en `src/`.
 
+Cómo leer esta guía (para evitar confusiones):
+- ✅ “Implementado” significa que existe en el repo y se usa en el flujo actual.
+- 🟡 “Referencia/Futuro” significa que puede servir como guía, pero no está cableado tal cual.
+- Los ejemplos de SQL DDL (CREATE VIEW) describen la preparación de vistas en MySQL; la app asume que esas vistas ya existen en la DB activa.
+
 ## 0) Requisitos y supuestos
 
 ### Tecnologías
 - **Python 3.10+**
-- **Streamlit 1.52.2**
+- **Streamlit 1.53.0**
 - **MySQL 5.6.12**
 - Driver MySQL (recomendado): `mysql-connector-python`
 - SQLAlchemy (requerido por Streamlit Connections para el `url`)
@@ -69,6 +74,12 @@ Nota importante (caso real observado):
   `vw_comanda_ultima_impresion` / `bar_comanda_impresion` puede ya indicar `IMPRESO`.
 - La vista `comandas_v7` está construida desde el log (`vw_comanda_ultima_impresion`) y tiende a mostrar un estado
   “efectivo” (por ejemplo, `IMPRESO` aun cuando `bar_comanda.estado_impresion` es `NULL`).
+
+Nota sobre este repo:
+- La app **no** consulta `comandas_v7` para los KPIs/gráficos.
+- El toggle “Ventas: usar log de impresión” mantiene la vista `comandas_v6`/`comandas_v6_todas` como fuente y
+  aplica una **señal alternativa** vía `vw_comanda_ultima_impresion` (join en las queries).
+- `comandas_v7` se valida en el healthcheck por si existe en la DB, pero no es un requisito funcional del código.
 
 Por eso, en la UI existe un expander de diagnóstico para comparar “Ventas finalizadas estrictas” vs “Ventas con log”.
 
@@ -247,199 +258,85 @@ dashboard/
 ### 3.2 `query_store.py` (patrón del repo)
 
 ✅ Nota: la implementación real vive en `src/query_store.py` (queries + `fetch_dataframe`).
-Los snippets de esta sección son de referencia y pueden simplificar/omitir partes.
+Los snippets de esta sección son un resumen para lectura rápida; si vas a modificar lógica, edita directamente el archivo.
 
 En este proyecto se usa **Streamlit Connections**, por lo que la parametrización recomendada es estilo SQLAlchemy: `:param`.
 
+Nota importante sobre consistencia:
+- La clase `Filters` implementada hoy en el repo contiene **solo** rangos por operativa o fechas (`op_ini/op_fin`, `dt_ini/dt_fin`).
+- Otros filtros por dimensión (barra/categoría/usuario/estado/tipo) son ideas posibles, pero **no están implementados** en el código actual.
+
 ```python
-# src/query_store.py
+# src/query_store.py (resumen fiel al repo)
 from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, Any, List
+from typing import Any
+
 
 @dataclass(frozen=True)
 class Filters:
-    # Rangos
-    op_ini: Optional[int] = None
-    op_fin: Optional[int] = None
-    dt_ini: Optional[str] = None   # 'YYYY-MM-DD HH:MM:SS'
-    dt_fin: Optional[str] = None
+    op_ini: int | None = None
+    op_fin: int | None = None
+    dt_ini: str | None = None  # 'YYYY-MM-DD HH:MM:SS'
+    dt_fin: str | None = None
 
-    # Dimensiones
-    id_barra: Optional[int] = None
-    categoria: Optional[str] = None
-    usuario: Optional[str] = None
 
-    # Estados de negocio (ya vienen “humanizados” en la vista)
-    estado_comanda: Optional[str] = None      # 'PENDIENTE'/'PROCESADO'/'ANULADO'
-    estado_impresion: Optional[str] = None    # 'IMPRESO'/'PENDIENTE'/None
-    tipo_salida: Optional[str] = None         # 'VENTA'/'CORTESIA'
+def build_where(
+    filters: Filters,
+    mode: str,
+    *,
+    table_alias: str | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """Construye WHERE + params.
 
-def build_where(f: Filters, mode: str) -> Tuple[str, Dict[str, Any]]:
-    """
-    mode:
-      - 'ops'   -> filtra por id_operacion BETWEEN
-      - 'dates' -> filtra por fecha_emision BETWEEN
-      - 'none'  -> sin rango (solo tiempo real, porque la vista ya está acotada)
-    """
-    clauses: List[str] = []
-    params: Dict[str, Any] = {}
+  mode:
+    - 'ops'   -> filtra por id_operacion BETWEEN
+    - 'dates' -> filtra por fecha_emision BETWEEN
+    - 'none'  -> sin rango (tiempo real; la vista ya viene acotada)
+  """
+
+    clauses: list[str] = []
+    params: dict[str, Any] = {}
+
+    def _col(name: str) -> str:
+        return f"{table_alias}.{name}" if table_alias else name
 
     if mode == "ops":
-        if f.op_ini is None or f.op_fin is None:
+        if filters.op_ini is None or filters.op_fin is None:
             raise ValueError("mode='ops' requiere op_ini y op_fin")
-      clauses.append("id_operacion BETWEEN :op_ini AND :op_fin")
-      params["op_ini"] = int(f.op_ini)
-      params["op_fin"] = int(f.op_fin)
+        clauses.append(f"{_col('id_operacion')} BETWEEN :op_ini AND :op_fin")
+        params["op_ini"] = int(filters.op_ini)
+        params["op_fin"] = int(filters.op_fin)
 
     elif mode == "dates":
-        if f.dt_ini is None or f.dt_fin is None:
+        if filters.dt_ini is None or filters.dt_fin is None:
             raise ValueError("mode='dates' requiere dt_ini y dt_fin")
-      clauses.append("fecha_emision BETWEEN :dt_ini AND :dt_fin")
-        params["dt_ini"] = f.dt_ini
-        params["dt_fin"] = f.dt_fin
+        clauses.append(f"{_col('fecha_emision')} BETWEEN :dt_ini AND :dt_fin")
+        params["dt_ini"] = filters.dt_ini
+        params["dt_fin"] = filters.dt_fin
 
     elif mode == "none":
         pass
     else:
         raise ValueError("mode inválido: use 'ops'|'dates'|'none'")
 
-    # Nota: el repo hoy utiliza principalmente filtros por operativa o por fechas.
-
     where_sql = ""
     if clauses:
         where_sql = "WHERE " + " AND ".join(clauses)
 
     return where_sql, params
-
-
-def q_kpis(view_name: str, where_sql: str) -> str:
-    return f"""
-    SELECT
-      SUM(sub_total) AS total_vendido,
-      COUNT(DISTINCT id_comanda) AS total_comandas,
-      SUM(cantidad) AS items_vendidos,
-      ROUND(SUM(sub_total) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio,
-
-      COUNT(DISTINCT CASE WHEN estado_comanda = 'PENDIENTE' THEN id_comanda END) AS comandas_pendientes,
-      COUNT(DISTINCT CASE WHEN estado_comanda <> 'ANULADO' AND estado_impresion = 'PENDIENTE' THEN id_comanda END) AS comandas_impresion_pendiente,
-      COUNT(DISTINCT CASE WHEN estado_comanda <> 'ANULADO' AND estado_impresion IS NULL THEN id_comanda END) AS comandas_sin_estado_impresion,
-
-      SUM(CASE WHEN tipo_salida = 'CORTESIA' THEN COALESCE(cor_subtotal_anterior, sub_total, 0) ELSE 0 END) AS monto_cortesia,
-      COUNT(DISTINCT CASE WHEN tipo_salida = 'CORTESIA' THEN id_comanda END) AS comandas_cortesia,
-
-      SUM(CASE WHEN estado_comanda = 'ANULADO' THEN sub_total ELSE 0 END) AS monto_anulado,
-      COUNT(DISTINCT CASE WHEN estado_comanda = 'ANULADO' THEN id_comanda END) AS comandas_anuladas
-    FROM {view_name}
-    {where_sql};
-    """
-
-def q_ventas_por_hora(view_name: str, where_sql: str) -> str:
-    return f"""
-    SELECT
-      HOUR(fecha_emision) AS hora,
-      SUM(sub_total) AS total_vendido,
-      COUNT(DISTINCT id_comanda) AS comandas,
-      SUM(cantidad) AS items
-    FROM {view_name}
-    {where_sql}
-    GROUP BY HOUR(fecha_emision)
-    ORDER BY hora;
-    """
-
-def q_por_categoria(view_name: str, where_sql: str) -> str:
-    return f"""
-    SELECT
-      COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
-      SUM(sub_total) AS total_vendido,
-      SUM(cantidad)  AS unidades,
-      COUNT(DISTINCT id_comanda) AS comandas,
-      ROUND(SUM(sub_total) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio
-    FROM {view_name}
-    {where_sql}
-    GROUP BY COALESCE(categoria, 'SIN CATEGORIA')
-    ORDER BY total_vendido DESC;
-    """
-
-def q_top_productos(view_name: str, where_sql: str, limit: int = 20, order_by: str = "total_vendido") -> str:
-    order_expr = "total_vendido DESC"
-    if order_by == "unidades":
-        order_expr = "unidades DESC"
-
-    return f"""
-    SELECT
-      id_producto_combo,
-      nombre,
-      COALESCE(categoria, 'SIN CATEGORIA') AS categoria,
-      SUM(cantidad) AS unidades,
-      SUM(sub_total) AS total_vendido,
-      ROUND(SUM(sub_total) / NULLIF(SUM(cantidad), 0), 2) AS precio_promedio_unitario
-    FROM {view_name}
-    {where_sql}
-    GROUP BY id_producto_combo, nombre, COALESCE(categoria, 'SIN CATEGORIA')
-    ORDER BY {order_expr}
-    LIMIT {int(limit)};
-    """
-
-def q_por_usuario(view_name: str, where_sql: str) -> str:
-    return f"""
-    SELECT
-      usuario_reg,
-      SUM(sub_total) AS total_vendido,
-      COUNT(DISTINCT id_comanda) AS comandas,
-      SUM(cantidad) AS items,
-      ROUND(SUM(sub_total) / NULLIF(COUNT(DISTINCT id_comanda), 0), 2) AS ticket_promedio,
-      SUM(CASE WHEN tipo_salida = 'CORTESIA' THEN sub_total ELSE 0 END) AS monto_cortesia,
-      COUNT(DISTINCT CASE WHEN tipo_salida = 'CORTESIA' THEN id_comanda END) AS comandas_cortesia
-    FROM {view_name}
-    {where_sql}
-    GROUP BY usuario_reg
-    ORDER BY total_vendido DESC;
-    """
-
-def q_prefacturacion(view_name: str, where_sql: str) -> str:
-
-  # 🟡 Futuro / no implementado aún en el repo (idea documentada)
-    return f"""
-    SELECT
-      SUM(CASE WHEN (id_factura IS NOT NULL OR nro_factura IS NOT NULL) THEN sub_total ELSE 0 END) AS monto_facturado,
-      SUM(CASE WHEN (id_factura IS NULL AND nro_factura IS NULL) THEN sub_total ELSE 0 END)       AS monto_no_facturado,
-
-      COUNT(DISTINCT CASE WHEN (id_factura IS NOT NULL OR nro_factura IS NOT NULL) THEN id_comanda END) AS comandas_facturadas,
-      COUNT(DISTINCT CASE WHEN (id_factura IS NULL AND nro_factura IS NULL) THEN id_comanda END)       AS comandas_no_facturadas
-    FROM {view_name}
-    {where_sql};
-    """
-
-def q_detalle(view_name: str, where_sql: str, limit: int = 500) -> str:
-    return f"""
-    SELECT
-      fecha_emision,
-      id_operacion,
-      id_comanda,
-      id_mesa,
-      usuario_reg,
-      nombre,
-      categoria,
-      cantidad,
-      precio_venta,
-      sub_total,
-      tipo_salida,
-      estado_comanda,
-      estado_impresion,
-      id_factura,
-      nro_factura
-    FROM {view_name}
-    {where_sql}
-    ORDER BY fecha_emision DESC
-    LIMIT {int(limit)};
-    """
 ```
+
+Qué viviría en `src/query_store.py` además de `build_where`:
+- Queries por bloque (`q_kpis`, `q_ventas_por_hora`, `q_por_categoria`, `q_top_productos`, `q_por_usuario`, `q_detalle`).
+- Helpers de condiciones de negocio (ventas/cortesías finalizadas).
+- Diagnóstico de impresión (`q_impresion_snapshot`) y señal alternativa de IMPRESO vía join a `vw_comanda_ultima_impresion`.
 
 ### 3.3 `db.py` (helper mínimo)
 
 ✅ En este repo, `src/db.py` usa `st.connection(..., type="sql")` (Streamlit Connections).
-El ejemplo con `create_engine` es **alternativo** y aplica si se decide no usar Connections.
+El ejemplo con `create_engine` es 🟡 **alternativo** y solo aplica si se decide no usar Connections.
 
 ```python
 # src/db.py
@@ -462,36 +359,8 @@ def read_df(sql: str, params: dict):
 ✅ En este repo, la capa de servicio real está en `src/metrics.py` y expone funciones
 granulares (por bloque) en vez de un `get_dashboard_data` único.
 
-```python
-# src/metrics.py
-from .db import read_df
-from .query_store import (
-    Filters, build_where,
-    q_kpis, q_ventas_por_hora, q_por_categoria, q_top_productos,
-    q_por_usuario, q_prefacturacion, q_detalle
-)
-
-def get_dashboard_data(view_name: str, f: Filters, mode: str):
-    where_sql, params = build_where(f, mode)
-
-    kpis = read_df(q_kpis(view_name, where_sql), params).iloc[0].to_dict()
-    por_hora = read_df(q_ventas_por_hora(view_name, where_sql), params)
-    por_categoria = read_df(q_por_categoria(view_name, where_sql), params)
-    top = read_df(q_top_productos(view_name, where_sql, limit=20), params)
-    por_usuario = read_df(q_por_usuario(view_name, where_sql), params)
-    prefac = read_df(q_prefacturacion(view_name, where_sql), params).iloc[0].to_dict()
-    detalle = read_df(q_detalle(view_name, where_sql, limit=500), params)
-
-    return dict(
-        kpis=kpis,
-        por_hora=por_hora,
-        por_categoria=por_categoria,
-        top=top,
-        por_usuario=por_usuario,
-        prefac=prefac,
-        detalle=detalle,
-    )
-```
+Punto clave: la UI llama a `src/metrics.py`, que a su vez genera SQL con `src/query_store.py` y ejecuta con `fetch_dataframe`.
+Ejemplos reales de funciones (ver archivo): `get_kpis(...)`, `get_estado_operativo(...)`, `get_ventas_por_hora(...)`.
 
 ---
 
@@ -560,6 +429,25 @@ Formato Bolivia (implementación actual):
 - Operativa activa sin ventas.
 - Comandas `DES`: deben desaparecer.
 - Operativas `DES`: deben desaparecer.
+
+---
+
+## Checklist de documentación (para mantenerla siempre al día)
+
+Usa esta lista cada vez que cambies SQL/servicios/UI:
+
+- Si cambias SQL en `src/query_store.py`:
+  - Actualiza este doc si cambian reglas de negocio (ventas/cortesías/impresión) o si se agregan nuevas vistas requeridas.
+  - Verifica que el healthcheck (`Q_HEALTHCHECK`) siga alineado con los objetos que realmente se usan.
+- Si cambias servicios en `src/metrics.py`:
+  - Revisa que `README.md` refleje nuevos bloques (KPIs/gráficos/diagnósticos) o cambios en definiciones.
+  - Actualiza `docs/03-evolucion_y_mejoras.md` con un resumen del cambio.
+- Si cambias UI en `app.py` o `src/ui/*`:
+  - Asegura que los `help=` (tooltips) sigan el estándar: qué mide, incluye/excluye, contexto (vista+filtros).
+  - Si agregas toggles (p.ej. “usar log de impresión”), documenta la semántica exacta y la fuente de datos.
+- Si cambias dependencias:
+  - Mantén `requirements.txt` sincronizado con la `.venv` (especialmente `streamlit`).
+  - Actualiza la sección “Requisitos” en `README.md`.
 
 ---
 

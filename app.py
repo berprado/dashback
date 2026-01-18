@@ -685,7 +685,7 @@ else:
             st.error(f"Error cargando detalle: {exc}")
             _maybe_render_sql_debug(exc)
 
-st.subheader("Siguiente paso")
+st.subheader("Cómo extender")
 st.write(
-    "Agrega consultas en `src/query_store.py` y UI en `src/ui/` para construir el dashboard."
+    "Para agregar una métrica: define el SQL en src/query_store.py, expón un servicio en src/metrics.py y cablea la UI en app.py (y/o src/ui/)."
 )
