@@ -1,0 +1,31 @@
+# Normalización de finales de línea (evita warnings LF/CRLF en Windows)
+# Fuente: reglas típicas para repos cross-platform.
+
+# Default: tratar como texto y normalizar a LF en el repositorio
+* text=auto eol=lf
+
+# Lenguajes/archivos del proyecto
+*.py  text eol=lf
+*.md  text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+*.sql text eol=lf
+
+# Windows scripts
+*.ps1 text eol=crlf
+
+# Binarios comunes (no tocar)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.7z binary
+*.woff binary
+*.woff2 binary
