@@ -449,6 +449,10 @@ Usa esta lista cada vez que cambies SQL/servicios/UI:
   - Mantén `requirements.txt` sincronizado con la `.venv` (especialmente `streamlit`).
   - Actualiza la sección “Requisitos” en `README.md`.
 
+- Consistencia de finales de línea (Windows/macOS/Linux):
+  - El repo usa `.gitattributes` para normalizar a LF los archivos de código/docs.
+  - Si ves warnings LF/CRLF, ejecuta `git add --renormalize .` y revisa `git status` antes de commitear.
+
 ---
 
 ## 6) Etapa 6 — Optimización futura (si el histórico crece)

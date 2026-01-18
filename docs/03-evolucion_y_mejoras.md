@@ -253,6 +253,9 @@ Actualización (documentación):
 - Se ajustó docs/02 para alinear explícitamente qué está implementado hoy (Filters/build_where) y aclarar que el toggle de impresión usa el log (`vw_comanda_ultima_impresion`) vía joins (no consume `comandas_v7`).
 - Pasada editorial en docs/02 y README: separar mejor “Implementado” vs “Referencia/Futuro” y eliminar snippets que no coincidían con el código real.
 
+Actualización (repo / calidad):
+- Se agregó `.gitattributes` para normalizar finales de línea (LF) en archivos de código y documentación, evitando warnings LF/CRLF en Windows.
+
 ---
 
 ## 12) Próximas ideas (no implementadas aún)
