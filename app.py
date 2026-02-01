@@ -28,8 +28,42 @@ from src.ui.layout import render_page_header, render_sidebar_connection_section
 
 st.set_page_config(page_title="Dashback", layout="wide")
 
+
+def _inject_metric_border_styles() -> None:
+    st.markdown(
+        """
+<style>
+    /*
+        Bordes diferenciados por grupo de métricas.
+        Nota: Streamlit no expone color de borde por API en st.metric; se controla vía CSS.
+    */
+    .metric-scope div[data-testid="stMetric"] {
+        border-radius: 10px;
+    }
+
+    .metric-kpis div[data-testid="stMetric"] {
+        border: 1px solid rgba(46, 134, 222, 0.95) !important; /* azul */
+        box-shadow: 0 0 0 1px rgba(46, 134, 222, 0.10) inset;
+    }
+
+    .metric-diagnostico-impresion div[data-testid="stMetric"] {
+        border: 1px solid rgba(142, 68, 173, 0.95) !important; /* morado */
+        box-shadow: 0 0 0 1px rgba(142, 68, 173, 0.10) inset;
+    }
+
+    .metric-estado-operativo div[data-testid="stMetric"] {
+        border: 1px solid rgba(230, 126, 34, 0.95) !important; /* naranja */
+        box-shadow: 0 0 0 1px rgba(230, 126, 34, 0.10) inset;
+    }
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 render_page_header()
 probar, connection_name = render_sidebar_connection_section()
+
+_inject_metric_border_styles()
 
 
 with st.sidebar:
@@ -222,6 +256,8 @@ if conn is None or startup is None:
 else:
     try:
         kpis = get_kpis(conn, startup.view_name, filters, mode_for_metrics)
+
+        st.markdown('<div class="metric-scope metric-kpis">', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
 
         total_vendido = (
@@ -286,10 +322,17 @@ else:
             border=True,
         )
 
+        st.markdown("</div>", unsafe_allow_html=True)
+
         with st.expander("Diagnóstico de impresión (impacto en ventas)", expanded=False):
             st.caption(
                 "Compara la venta finalizada estricta (estado_impresion='IMPRESO' en la vista) vs una señal "
                 "'efectiva' que además toma el último estado del log de impresión (vw_comanda_ultima_impresion)."
+            )
+
+            st.markdown(
+                '<div class="metric-scope metric-diagnostico-impresion">',
+                unsafe_allow_html=True,
             )
             d1, d2, d3 = st.columns(3)
 
@@ -318,6 +361,8 @@ else:
                 help="Diferencia: total vendido (con log) - total vendido (estricto).",
                 border=True,
             )
+
+            st.markdown("</div>", unsafe_allow_html=True)
 
         try:
             act = get_actividad_emision_comandas(
@@ -350,6 +395,7 @@ else:
             recent_intervals = act.get("recent_intervals")
             all_intervals = act.get("all_intervals")
 
+            st.markdown('<div class="metric-scope metric-kpis">', unsafe_allow_html=True)
             a1, a2, a3, a4 = st.columns(4)
             a1.metric(
                 "Última comanda",
@@ -386,10 +432,13 @@ else:
                 ),
                 border=True,
             )
+
+            st.markdown("</div>", unsafe_allow_html=True)
         except Exception as exc:
             st.warning(f"No se pudo calcular actividad: {exc}")
             _maybe_render_sql_debug(exc)
 
+        st.markdown('<div class="metric-scope metric-kpis">', unsafe_allow_html=True)
         k1, k2, k3 = st.columns(3)
         k1.metric(
             "Total cortesías",
@@ -412,6 +461,8 @@ else:
             help="Cortesías finalizadas (CORTESIA/PROCESADO/IMPRESO): suma de cantidad.",
             border=True,
         )
+
+        st.markdown("</div>", unsafe_allow_html=True)
     except Exception as exc:
         st.error(f"Error calculando KPIs: {exc}")
         _maybe_render_sql_debug(exc)
@@ -422,6 +473,7 @@ if conn is None or startup is None:
 else:
     try:
         estado = get_estado_operativo(conn, startup.view_name, filters, mode_for_metrics)
+        st.markdown('<div class="metric-scope metric-estado-operativo">', unsafe_allow_html=True)
         e1, e2, e3, e4 = st.columns(4)
         e1.metric(
             "Comandas pendientes",
@@ -452,6 +504,7 @@ else:
             ),
             border=True,
         )
+        st.markdown("</div>", unsafe_allow_html=True)
 
         with st.expander(
             "Ver IDs de comandas (pendientes / impresión pendiente / sin estado / anuladas)",

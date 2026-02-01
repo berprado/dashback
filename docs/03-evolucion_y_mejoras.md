@@ -219,6 +219,9 @@ Para evitar diagnósticos “a ciegas” cuando el KPI de ventas queda subestima
 - Se evitó polling/auto-refresh continuo; se dejó un refresco manual en modo tiempo real.
 - Se cargan recursos pesados (detalle e IDs) solo bajo demanda.
 
+Mejora visual:
+- Se añadieron contornos con colores diferenciados por grupo de métricas (KPIs / diagnóstico de impresión / estado operativo) para mejorar lectura rápida.
+
 ### 9.1 Estándar de ayudas (tooltips `help`)
 
 Se estandarizaron las ayudas (`help=`) en KPIs y métricas para reducir interpretaciones incorrectas.

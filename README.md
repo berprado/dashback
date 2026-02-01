@@ -100,6 +100,9 @@ Capturas:
 - **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas/objetos requeridos (incluye log de impresión).
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
 
+UX:
+- **Contorno por sección en métricas**: colores diferenciados para KPIs, diagnóstico de impresión y estado operativo (mejora visual).
+
 ## 🔒 Seguridad / Producción
 - La app está pensada para operar en **solo lectura** (consultas `SELECT`).
 - En producción, usa credenciales **read-only** siempre que sea posible.
