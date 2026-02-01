@@ -1,4 +1,4 @@
-# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.53.0 + MySQL 5.6.12)
+# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.53.1 + MySQL 5.6.12)
 
 Este documento consolida la evolución del dashboard **Dashback** durante la fase inicial, destacando el crecimiento gradual de métricas/visualizaciones, y las optimizaciones/correcciones aplicadas para operar de forma segura y consistente tanto en **local** como en **producción**.
 

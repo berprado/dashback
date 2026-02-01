@@ -9,7 +9,7 @@
       <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
    </a>
    <a href="https://streamlit.io/">
-      <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-1.53.0-FF4B4B?logo=streamlit&logoColor=white">
+      <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-1.53.1-FF4B4B?logo=streamlit&logoColor=white">
    </a>
    <a href="https://www.mysql.com/">
       <img alt="MySQL" src="https://img.shields.io/badge/MySQL-5.6-4479A1?logo=mysql&logoColor=white">
@@ -46,7 +46,7 @@
 
 ## ✅ Requisitos
 - Python 3.10+
-- Streamlit 1.53.0
+- Streamlit 1.53.1
 
 ## 🚀 Inicio rápido
 1. Instala dependencias:

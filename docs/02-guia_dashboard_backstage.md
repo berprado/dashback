@@ -30,7 +30,7 @@ Cómo leer esta guía (para evitar confusiones):
 
 ### Tecnologías
 - **Python 3.10+**
-- **Streamlit 1.53.0**
+- **Streamlit 1.53.1**
 - **MySQL 5.6.12**
 - Driver MySQL (recomendado): `mysql-connector-python`
 - SQLAlchemy (requerido por Streamlit Connections para el `url`)
