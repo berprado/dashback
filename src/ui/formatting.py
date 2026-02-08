@@ -102,6 +102,12 @@ def format_detalle_df(df: pd.DataFrame) -> pd.DataFrame:
 
     return format_df_money_columns(df, ["precio_venta", "sub_total"], decimals=2)
 
+
+def format_margen_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Formatea el DataFrame de margen por comanda para visualización en Streamlit."""
+
+    return format_df_money_columns(df, ["total_venta", "cogs_comanda", "margen_comanda"], decimals=2)
+
     axis = (axis or "y").lower().strip()
     if axis not in {"x", "y"}:
         axis = "y"

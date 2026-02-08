@@ -1,4 +1,4 @@
-# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.53.1 + MySQL 5.6.12)
+# 🧭 Evolución del proyecto Dashback — Fase 1 (Streamlit 1.52.2 + MySQL 5.6.12)
 
 Este documento consolida la evolución del dashboard **Dashback** durante la fase inicial, destacando el crecimiento gradual de métricas/visualizaciones, y las optimizaciones/correcciones aplicadas para operar de forma segura y consistente tanto en **local** como en **producción**.
 
@@ -86,7 +86,20 @@ Corrección crítica: en cortesías el `sub_total` puede ser 0; el valor real �
 
 Por eso, el KPI de “Total cortesías” suma `COALESCE(cor_subtotal_anterior, sub_total, 0)` cuando `tipo_salida = 'CORTESIA'`.
 
-### 4.3 Estado operativo (operación / impresión)
+### 4.3 Márgenes & Rentabilidad (P&L)
+
+Se incorporó el bloque ejecutivo de P&L con fuente en `vw_margen_comanda`:
+
+- Ventas brutas (suma `total_venta`)
+- COGS (suma `cogs_comanda`)
+- Margen bruto (suma `margen_comanda`)
+- Margen % (margen / ventas)
+
+Este bloque respeta el contexto actual (operativas o fechas) y sirve como validación rápida contra `ope_conciliacion`.
+
+Se agregó el **detalle por comanda** bajo demanda (expander), con límite configurable y formateo Bolivia para montos.
+
+### 4.4 Estado operativo (operación / impresión)
 
 - Comandas pendientes
 - Comandas anuladas
@@ -110,7 +123,7 @@ Semántica operativa (importante):
 	- Impresión pendiente: comandas **no anuladas** con `estado_impresion='PENDIENTE'`.
 	- Sin estado de impresión: comandas **no anuladas** con `estado_impresion IS NULL`.
 
-### 4.4 Gráficos
+### 4.5 Gráficos
 
 - Ventas por hora
 - Ventas por categoría
@@ -120,7 +133,7 @@ Semántica operativa (importante):
 Presentación:
 - Los gráficos se organizan en 2 filas de 2 columnas para comparación lado a lado.
 
-### 4.5 Actividad (ritmo de emisión)
+### 4.6 Actividad (ritmo de emisión)
 
 Se agregó un bloque de “Actividad” basado en `fecha_emision` para medir el pulso operativo:
 

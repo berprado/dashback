@@ -9,7 +9,7 @@
       <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
    </a>
    <a href="https://streamlit.io/">
-      <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-1.53.1-FF4B4B?logo=streamlit&logoColor=white">
+      <img alt="Streamlit" src="https://img.shields.io/badge/Streamlit-1.52.2-FF4B4B?logo=streamlit&logoColor=white">
    </a>
    <a href="https://www.mysql.com/">
       <img alt="MySQL" src="https://img.shields.io/badge/MySQL-5.6-4479A1?logo=mysql&logoColor=white">
@@ -46,7 +46,7 @@
 
 ## ✅ Requisitos
 - Python 3.10+
-- Streamlit 1.53.1
+- Streamlit 1.52.2
 
 ## 🚀 Inicio rápido
 1. Instala dependencias:
@@ -89,6 +89,8 @@ Capturas:
 - **Formato Bolivia (moneda)**: montos en `Bs 1.100,33` (miles con punto, decimales con coma) y conteos en `1.100`.
 - **Actividad (tiempo real / histórico)**: última comanda, minutos desde la última, y ritmo de emisión (mediana entre comandas para últimas 10 y para el rango completo).
 - **Cortesías**: total cortesías (usa `cor_subtotal_anterior` cuando aplica), comandas cortesía e ítems cortesía.
+- **Márgenes & Rentabilidad (P&L)**: ventas brutas, COGS, margen bruto y margen % desde `vw_margen_comanda`, con el mismo contexto de filtros.
+- **Detalle P&L por comanda**: auditoría de ventas/COGS/margen por comanda desde `vw_margen_comanda` (bajo demanda y con límite configurable).
 - **Estado operativo**: comandas pendientes, anuladas, impresión pendiente y sin estado de impresión, con opción para ver IDs (con límite).
    - `estado_impresion='PENDIENTE'` es temporal (en cola/por procesar).
    - `estado_impresion=NULL` puede significar “aún no procesada/impresa” o “dato faltante”; se interpreta junto con `estado_comanda`.

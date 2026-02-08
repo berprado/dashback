@@ -19,6 +19,8 @@ from src.query_store import (
 	q_por_usuario,
 	q_por_categoria,
 	q_top_productos,
+	q_wac_cogs_summary,
+	q_wac_cogs_detalle,
 	q_ventas_por_hora,
 )
 
@@ -109,6 +111,58 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 		"items_cortesia": _to_float(row.get("items_cortesia")),
 		"comandas_cortesia": _to_int(row.get("comandas_cortesia")),
 	}
+
+
+def get_wac_cogs_summary(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+) -> dict[str, Any]:
+	"""Obtiene el P&L consolidado (ventas, COGS, margen).
+
+	Retorna dict con:
+	- total_ventas: suma facturado (Bs)
+	- total_cogs: suma costo insumos (Bs)
+	- total_margen: utilidad bruta (Bs)
+	- margen_pct: margen % (0-100)
+	"""
+
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	sql = q_wac_cogs_summary(view_name, where_sql)
+	df = _run_df(conn, sql, params, context="Error ejecutando P&L (WAC/COGS)")
+
+	if df is None or df.empty:
+		return {
+			"total_ventas": 0.0,
+			"total_cogs": 0.0,
+			"total_margen": 0.0,
+			"margen_pct": 0.0,
+		}
+
+	row = df.iloc[0].to_dict()
+	return {
+		"total_ventas": _to_float(row.get("total_ventas")),
+		"total_cogs": _to_float(row.get("total_cogs")),
+		"total_margen": _to_float(row.get("total_margen")),
+		"margen_pct": _to_float(row.get("margen_pct")),
+	}
+
+
+def get_wac_cogs_detalle(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 300,
+) -> Any:
+	"""Detalle P&L por comanda (ventas, COGS, margen)."""
+
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	params["limit"] = int(limit)
+	sql = q_wac_cogs_detalle(view_name, where_sql, limit=int(limit))
+	return _run_df(conn, sql, params, context="Error ejecutando detalle P&L (WAC/COGS)")
 
 
 def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str, Any]:

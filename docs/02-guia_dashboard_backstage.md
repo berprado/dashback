@@ -30,7 +30,7 @@ Cómo leer esta guía (para evitar confusiones):
 
 ### Tecnologías
 - **Python 3.10+**
-- **Streamlit 1.53.1**
+- **Streamlit 1.52.2**
 - **MySQL 5.6.12**
 - Driver MySQL (recomendado): `mysql-connector-python`
 - SQLAlchemy (requerido por Streamlit Connections para el `url`)
@@ -103,6 +103,23 @@ Reglas clave que deben aparecer explícitas cuando aplique:
 - Cortesías: `tipo_salida='CORTESIA' AND estado_comanda='PROCESADO' AND estado_impresion='IMPRESO'`.
 - Impresión pendiente: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
 - Sin estado impresión: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
+
+## 0.1) Vista financiera (P&L): `vw_margen_comanda`
+
+Para el bloque ejecutivo de Márgenes & Rentabilidad se usa la vista `vw_margen_comanda`.
+
+Requisitos mínimos esperados:
+- `total_venta`: venta total por comanda (solo ventas reales, sin cortesías).
+- `cogs_comanda`: costo total de insumos consumidos.
+- `margen_comanda`: utilidad bruta por comanda.
+- `id_operacion` (y `fecha_emision` si se habilita filtro por fechas).
+
+La consulta consolidada suma esos campos y calcula `margen_pct = (margen / ventas) * 100`.
+
+Detalle por comanda:
+- Fuente: `vw_margen_comanda`.
+- Campos esperados: `id_operacion`, `id_comanda`, `id_barra`, `total_venta`, `cogs_comanda`, `margen_comanda`.
+- Se ordena por `id_comanda DESC` y se aplica un límite configurable desde la UI.
 
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 

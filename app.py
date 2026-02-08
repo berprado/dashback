@@ -18,11 +18,13 @@ from src.metrics import (
     get_ventas_por_categoria,
     get_ventas_por_hora,
     get_ventas_por_usuario,
+    get_wac_cogs_summary,
+    get_wac_cogs_detalle,
 )
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.components import bar_chart
-from src.ui.formatting import format_bs, format_detalle_df, format_int
+from src.ui.formatting import format_bs, format_detalle_df, format_int, format_margen_comanda_df
 from src.ui.layout import render_page_header, render_sidebar_connection_section
 
 
@@ -465,6 +467,99 @@ else:
         st.markdown("</div>", unsafe_allow_html=True)
     except Exception as exc:
         st.error(f"Error calculando KPIs: {exc}")
+        _maybe_render_sql_debug(exc)
+
+st.subheader("Márgenes & Rentabilidad")
+if conn is None or startup is None:
+    st.info("Conecta a la base de datos para ver márgenes.")
+else:
+    try:
+        wac_cogs = get_wac_cogs_summary(conn, "vw_margen_comanda", filters, mode_for_metrics)
+
+        st.markdown('<div class="metric-scope metric-kpis">', unsafe_allow_html=True)
+        m1, m2, m3, m4 = st.columns(4)
+
+        total_ventas = float(wac_cogs.get("total_ventas") or 0)
+        total_cogs = float(wac_cogs.get("total_cogs") or 0)
+        total_margen = float(wac_cogs.get("total_margen") or 0)
+        margen_pct = float(wac_cogs.get("margen_pct") or 0)
+
+        m1.metric(
+            "Ventas brutas",
+            format_bs(total_ventas),
+            help=(
+                "Suma total facturado en el contexto actual (comandas VENTA finalizadas). "
+                "Base para cálculo de margen = ventas - cogs."
+            ),
+            border=True,
+        )
+        m2.metric(
+            "COGS",
+            format_bs(total_cogs),
+            help=(
+                "Costo de los insumos consumidos (combos + comandables integrados). "
+                "Utilizado para calcular la utilidad bruta."
+            ),
+            border=True,
+        )
+        m3.metric(
+            "Margen bruto",
+            format_bs(total_margen),
+            help=(
+                "Utilidad bruta = ventas - cogs. "
+                "Indicador clave para control de rentabilidad operativa."
+            ),
+            border=True,
+        )
+        m4.metric(
+            "Margen %",
+            f"{margen_pct:.2f} %",
+            help=(
+                "Porcentaje de margen bruto = (margen / ventas) × 100. "
+                "Métrica ejecutiva: validación contra ope_conciliacion."
+            ),
+            border=True,
+        )
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        with st.expander("Detalle P&L por comanda", expanded=False):
+            st.caption(
+                "Una fila por comanda con ventas, COGS y margen. "
+                "Útil para auditoría fina (márgenes anómalos / receta / WAC)."
+            )
+            cargar_detalle_pnl = st.checkbox(
+                "Cargar detalle P&L",
+                value=False,
+                key="pnl_detalle_load",
+                help=(
+                    "Ejecuta la consulta sobre vw_margen_comanda para el contexto actual. "
+                    "Los montos se formatean como texto (orden lexicográfico)."
+                ),
+            )
+            limit_pnl = st.number_input(
+                "Límite",
+                min_value=50,
+                max_value=2000,
+                value=300,
+                step=50,
+                help="Máximo de filas a traer, ordenadas por id_comanda DESC.",
+            )
+
+            if cargar_detalle_pnl:
+                detalle_pnl = get_wac_cogs_detalle(
+                    conn,
+                    "vw_margen_comanda",
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit_pnl),
+                )
+                if detalle_pnl is None or detalle_pnl.empty:
+                    st.info("Sin datos para el contexto seleccionado.")
+                else:
+                    st.dataframe(format_margen_comanda_df(detalle_pnl), width="stretch")
+    except Exception as exc:
+        st.error(f"Error calculando P&L: {exc}")
         _maybe_render_sql_debug(exc)
 
 st.subheader("Estado operativo")

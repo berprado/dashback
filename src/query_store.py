@@ -653,3 +653,57 @@ def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None)
         return pd.DataFrame(list(rows))
     finally:
         cursor.close()
+
+# ===== WAC / COGS / MÁRGENES =====
+
+def q_wac_cogs_summary(view_name: str, where_sql: str) -> str:
+    """P&L consolidado de la operativa (ventas, COGS, margen).
+	
+    Ejecutivo: lo que mira el dueño.
+    - Ventas: suma total facturado (tipo_salida='VENTA' finalizado)
+    - COGS: suma costo insumos consumidos
+    - Margen: utilidad bruta = ventas - cogs
+	
+    Base para:
+    - Dashboard financiero
+    - Margen por día/operativa
+    - Control de rentabilidad global
+	
+    Supuesto: vw_margen_comanda ya existe en la BD con columnas:
+    - total_venta, cogs_comanda, margen_comanda
+    - id_operacion (y/o fecha_emision si se usa filtro por fechas)
+    """
+	
+    return f"""
+    SELECT
+        COALESCE(SUM(total_venta), 0) AS total_ventas,
+        COALESCE(SUM(cogs_comanda), 0) AS total_cogs,
+        COALESCE(SUM(margen_comanda), 0) AS total_margen,
+        ROUND(
+            COALESCE(SUM(margen_comanda), 0) / NULLIF(COALESCE(SUM(total_venta), 0), 0) * 100,
+            2
+        ) AS margen_pct
+    FROM {view_name} v
+    {where_sql};
+    """
+
+
+def q_wac_cogs_detalle(view_name: str, where_sql: str, *, limit: int) -> str:
+    """Detalle P&L por comanda.
+
+    Retorna una fila por comanda con venta, COGS y margen.
+    """
+
+    return f"""
+    SELECT
+        v.id_operacion,
+        v.id_comanda,
+        v.id_barra,
+        v.total_venta,
+        v.cogs_comanda,
+        v.margen_comanda
+    FROM {view_name} v
+    {where_sql}
+    ORDER BY v.id_comanda DESC
+    LIMIT :limit;
+    """
