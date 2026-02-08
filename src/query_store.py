@@ -748,3 +748,24 @@ def q_consumo_sin_valorar(view_name: str, where_sql: str, *, limit: int) -> str:
     ORDER BY v.cantidad_consumida_base DESC
     LIMIT :limit;
     """
+
+
+def q_cogs_por_comanda(view_name: str, where_sql: str, *, limit: int) -> str:
+    """COGS por comanda (sin ventas).
+
+    Ver solo el costo, sin precio de venta.
+    Ideal para cortesías (tienen COGS pero no ventas) y auditoría de consumo puro.
+    Bisagra entre inventario y finanzas.
+    """
+
+    return f"""
+    SELECT
+        v.id_operacion,
+        v.id_comanda,
+        v.id_barra,
+        v.cogs_comanda
+    FROM {view_name} v
+    {where_sql}
+    ORDER BY v.cogs_comanda DESC
+    LIMIT :limit;
+    """

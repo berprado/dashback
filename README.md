@@ -93,6 +93,7 @@ Capturas:
 - **Detalle P&L por comanda**: auditoría de ventas/COGS/margen por comanda desde `vw_margen_comanda` (bajo demanda y con límite configurable).
 - **Consumo valorizado de insumos**: análisis logístico de cantidades, WAC y costo por producto desde `vw_consumo_valorizado_operativa` (bajo demanda, ordenado por costo DESC).
 - **Consumo sin valorar**: sanidad de cantidades (sin WAC/costos) desde `vw_consumo_insumos_operativa` para detectar errores de receta/multiplicación/unidades (bajo demanda, ordenado por cantidad DESC).
+- **COGS por comanda**: costo puro por comanda (sin precio de venta) desde `vw_cogs_comanda`, ideal para cortesías y auditoría de consumo (bajo demanda, ordenado por COGS DESC).
 - **Estado operativo**: comandas pendientes, anuladas, impresión pendiente y sin estado de impresión, con opción para ver IDs (con límite).
    - `estado_impresion='PENDIENTE'` es temporal (en cola/por procesar).
    - `estado_impresion=NULL` puede significar “aún no procesada/impresa” o “dato faltante”; se interpreta junto con `estado_comanda`.

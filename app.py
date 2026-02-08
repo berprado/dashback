@@ -22,6 +22,7 @@ from src.metrics import (
     get_wac_cogs_detalle,
     get_consumo_valorizado,
     get_consumo_sin_valorar,
+    get_cogs_por_comanda,
 )
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
@@ -33,6 +34,7 @@ from src.ui.formatting import (
     format_margen_comanda_df,
     format_consumo_valorizado_df,
     format_consumo_sin_valorar_df,
+    format_cogs_comanda_df,
 )
 from src.ui.layout import render_page_header, render_sidebar_connection_section
 
@@ -642,6 +644,44 @@ else:
                     st.info("Sin datos para el contexto seleccionado.")
                 else:
                     st.dataframe(format_consumo_sin_valorar_df(consumo_sin_val), width="stretch")
+
+        with st.expander("COGS por comanda (sin ventas)", expanded=False):
+            st.caption(
+                "Costo puro por comanda, sin precio de venta. "
+                "Ideal para cortesías (tienen COGS pero no ventas) y auditoría de consumo. "
+                "Bisagra entre inventario y finanzas."
+            )
+            cargar_cogs = st.checkbox(
+                "Cargar COGS por comanda",
+                value=False,
+                key="cogs_comanda_load",
+                help=(
+                    "Ejecuta la consulta sobre vw_cogs_comanda para el contexto actual. "
+                    "Ordenado por cogs_comanda DESC."
+                ),
+            )
+            limit_cogs = st.number_input(
+                "Límite COGS",
+                min_value=50,
+                max_value=2000,
+                value=300,
+                step=50,
+                key="limit_cogs_comanda",
+                help="Máximo de comandas a traer, ordenadas por cogs_comanda DESC.",
+            )
+
+            if cargar_cogs:
+                cogs_df = get_cogs_por_comanda(
+                    conn,
+                    "vw_cogs_comanda",
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit_cogs),
+                )
+                if cogs_df is None or cogs_df.empty:
+                    st.info("Sin datos para el contexto seleccionado.")
+                else:
+                    st.dataframe(format_cogs_comanda_df(cogs_df), width="stretch")
     except Exception as exc:
         st.error(f"Error calculando P&L: {exc}")
         _maybe_render_sql_debug(exc)

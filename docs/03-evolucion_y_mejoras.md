@@ -109,6 +109,9 @@ Consulta logística para conciliación de inventario, detección de mermas y an�
 Se agregó el **consumo sin valorar** bajo demanda (expander), mostrando solo `cantidad_consumida_base`.
 Esta consulta aísla el problema de cantidades del problema de costos: si algo falla aquí, el error está en receta/multiplicación/unidades, no en WAC o margen.
 
+Se agregó el **COGS por comanda** bajo demanda (expander), mostrando solo `cogs_comanda` (sin precio de venta).
+Ideal para cortesías (tienen COGS pero no ventas) y auditoría de consumo puro. Bisagra entre inventario y finanzas.
+
 ### 4.4 Estado operativo (operación / impresión)
 
 - Comandas pendientes

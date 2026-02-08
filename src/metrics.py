@@ -23,6 +23,7 @@ from src.query_store import (
 	q_wac_cogs_detalle,
 	q_consumo_valorizado,
 	q_consumo_sin_valorar,
+	q_cogs_por_comanda,
 	q_ventas_por_hora,
 )
 
@@ -197,6 +198,22 @@ def get_consumo_sin_valorar(
 	params["limit"] = int(limit)
 	sql = q_consumo_sin_valorar(view_name, where_sql, limit=int(limit))
 	return _run_df(conn, sql, params, context="Error ejecutando consumo sin valorar")
+
+
+def get_cogs_por_comanda(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 300,
+) -> Any:
+	"""COGS por comanda (sin ventas)."""
+
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	params["limit"] = int(limit)
+	sql = q_cogs_por_comanda(view_name, where_sql, limit=int(limit))
+	return _run_df(conn, sql, params, context="Error ejecutando COGS por comanda")
 
 
 def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str, Any]:

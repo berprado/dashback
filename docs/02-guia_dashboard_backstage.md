@@ -133,6 +133,12 @@ Consumo sin valorar:
 - Se ordena por `cantidad_consumida_base DESC` y se aplica un límite configurable desde la UI.
 - Sanidad de cantidades: aísla problemas de receta/multiplicación/unidades de problemas de WAC/margen.
 
+COGS por comanda:
+- Fuente: `vw_cogs_comanda`.
+- Campos esperados: `id_operacion`, `id_comanda`, `id_barra`, `cogs_comanda`.
+- Se ordena por `cogs_comanda DESC` y se aplica un límite configurable desde la UI.
+- Ver solo el costo, sin precio de venta: ideal para cortesías y auditoría de consumo puro.
+
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 
 ### 1.1 Vista base recomendada: `comandas_v6_base`

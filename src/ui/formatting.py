@@ -159,6 +159,12 @@ def format_consumo_sin_valorar_df(df: pd.DataFrame) -> pd.DataFrame:
     
     return out
 
+
+def format_cogs_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Formatea el DataFrame de COGS por comanda para visualización en Streamlit."""
+
+    return format_df_money_columns(df, ["cogs_comanda"], decimals=2)
+
     axis = (axis or "y").lower().strip()
     if axis not in {"x", "y"}:
         axis = "y"
