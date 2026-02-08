@@ -21,6 +21,8 @@ from src.query_store import (
 	q_top_productos,
 	q_wac_cogs_summary,
 	q_wac_cogs_detalle,
+	q_consumo_valorizado,
+	q_consumo_sin_valorar,
 	q_ventas_por_hora,
 )
 
@@ -163,6 +165,38 @@ def get_wac_cogs_detalle(
 	params["limit"] = int(limit)
 	sql = q_wac_cogs_detalle(view_name, where_sql, limit=int(limit))
 	return _run_df(conn, sql, params, context="Error ejecutando detalle P&L (WAC/COGS)")
+
+
+def get_consumo_valorizado(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 300,
+) -> Any:
+	"""Consumo valorizado de insumos (cantidad, WAC, costo)."""
+
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	params["limit"] = int(limit)
+	sql = q_consumo_valorizado(view_name, where_sql, limit=int(limit))
+	return _run_df(conn, sql, params, context="Error ejecutando consumo valorizado")
+
+
+def get_consumo_sin_valorar(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 300,
+) -> Any:
+	"""Consumo sin valorar (solo cantidades, sin WAC ni costos)."""
+
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	params["limit"] = int(limit)
+	sql = q_consumo_sin_valorar(view_name, where_sql, limit=int(limit))
+	return _run_df(conn, sql, params, context="Error ejecutando consumo sin valorar")
 
 
 def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str, Any]:

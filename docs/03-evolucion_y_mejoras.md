@@ -99,6 +99,16 @@ Este bloque respeta el contexto actual (operativas o fechas) y sirve como valida
 
 Se agregó el **detalle por comanda** bajo demanda (expander), con límite configurable y formateo Bolivia para montos.
 
+Se agregó el **consumo valorizado de insumos** bajo demanda (expander), mostrando:
+- `cantidad_consumida_base` (formateado con 4 decimales)
+- `wac_operativa` (formato Bolivia)
+- `costo_consumo` (formato Bolivia)
+
+Consulta logística para conciliación de inventario, detección de mermas y análisis de costos por producto.
+
+Se agregó el **consumo sin valorar** bajo demanda (expander), mostrando solo `cantidad_consumida_base`.
+Esta consulta aísla el problema de cantidades del problema de costos: si algo falla aquí, el error está en receta/multiplicación/unidades, no en WAC o margen.
+
 ### 4.4 Estado operativo (operación / impresión)
 
 - Comandas pendientes

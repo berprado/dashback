@@ -121,6 +121,18 @@ Detalle por comanda:
 - Campos esperados: `id_operacion`, `id_comanda`, `id_barra`, `total_venta`, `cogs_comanda`, `margen_comanda`.
 - Se ordena por `id_comanda DESC` y se aplica un límite configurable desde la UI.
 
+Consumo valorizado:
+- Fuente: `vw_consumo_valorizado_operativa`.
+- Campos esperados: `id_operacion`, `id_producto`, `cantidad_consumida_base`, `wac_operativa`, `costo_consumo`.
+- Se ordena por `costo_consumo DESC` y se aplica un límite configurable desde la UI.
+- Útil para conciliación de inventario, detección de mermas y análisis de costos.
+
+Consumo sin valorar:
+- Fuente: `vw_consumo_insumos_operativa`.
+- Campos esperados: `id_operacion`, `id_producto`, `cantidad_consumida_base`.
+- Se ordena por `cantidad_consumida_base DESC` y se aplica un límite configurable desde la UI.
+- Sanidad de cantidades: aísla problemas de receta/multiplicación/unidades de problemas de WAC/margen.
+
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 
 ### 1.1 Vista base recomendada: `comandas_v6_base`

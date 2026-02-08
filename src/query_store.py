@@ -707,3 +707,44 @@ def q_wac_cogs_detalle(view_name: str, where_sql: str, *, limit: int) -> str:
     ORDER BY v.id_comanda DESC
     LIMIT :limit;
     """
+
+
+def q_consumo_valorizado(view_name: str, where_sql: str, *, limit: int) -> str:
+    """Consumo valorizado de insumos por producto.
+
+    Muestra qué insumos se consumieron, con cantidad, WAC y costo total.
+    Consulta logística para conciliación de inventario y detección de mermas.
+    """
+
+    return f"""
+    SELECT
+        v.id_operacion,
+        v.id_producto,
+        v.cantidad_consumida_base,
+        v.wac_operativa,
+        v.costo_consumo
+    FROM {view_name} v
+    {where_sql}
+    ORDER BY v.costo_consumo DESC
+    LIMIT :limit;
+    """
+
+
+def q_consumo_sin_valorar(view_name: str, where_sql: str, *, limit: int) -> str:
+    """Consumo sin valorar (sanidad de cantidades).
+
+    Aísla el problema de cantidades del problema de costos.
+    Si algo está mal aquí: no es WAC, no es margen, es receta/multiplicación/unidades.
+    Regla de oro: si el consumo está mal, todo lo demás estará mal aunque el WAC sea perfecto.
+    """
+
+    return f"""
+    SELECT
+        v.id_operacion,
+        v.id_producto,
+        v.cantidad_consumida_base
+    FROM {view_name} v
+    {where_sql}
+    ORDER BY v.cantidad_consumida_base DESC
+    LIMIT :limit;
+    """

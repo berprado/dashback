@@ -108,6 +108,57 @@ def format_margen_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
 
     return format_df_money_columns(df, ["total_venta", "cogs_comanda", "margen_comanda"], decimals=2)
 
+
+def format_number(value: Any, *, decimals: int = 2) -> str:
+    """Formatea un número con separador de miles (punto) y decimales (coma).
+
+    Sin prefijo monetario. Útil para cantidades, precios unitarios, etc.
+    """
+
+    x = _to_finite_float(value)
+    sign = "-" if x < 0 else ""
+    return f"{sign}{_format_number_es(abs(x), decimals=decimals)}"
+
+
+def format_consumo_valorizado_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Formatea el DataFrame de consumo valorizado para visualización en Streamlit."""
+
+    if df is None or df.empty:
+        return df
+
+    out = df.copy()
+    
+    # Cantidades con 4 decimales
+    if "cantidad_consumida_base" in out.columns:
+        out["cantidad_consumida_base"] = out["cantidad_consumida_base"].apply(
+            lambda v: format_number(v, decimals=4)
+        )
+    
+    # Monetarios con 2 decimales
+    money_cols = ["wac_operativa", "costo_consumo"]
+    for col in money_cols:
+        if col in out.columns:
+            out[col] = out[col].apply(lambda v: format_bs(v, decimals=2))
+    
+    return out
+
+
+def format_consumo_sin_valorar_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Formatea el DataFrame de consumo sin valorar para visualización en Streamlit."""
+
+    if df is None or df.empty:
+        return df
+
+    out = df.copy()
+    
+    # Solo cantidades con 4 decimales (sin montos)
+    if "cantidad_consumida_base" in out.columns:
+        out["cantidad_consumida_base"] = out["cantidad_consumida_base"].apply(
+            lambda v: format_number(v, decimals=4)
+        )
+    
+    return out
+
     axis = (axis or "y").lower().strip()
     if axis not in {"x", "y"}:
         axis = "y"

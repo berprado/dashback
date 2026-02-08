@@ -20,11 +20,20 @@ from src.metrics import (
     get_ventas_por_usuario,
     get_wac_cogs_summary,
     get_wac_cogs_detalle,
+    get_consumo_valorizado,
+    get_consumo_sin_valorar,
 )
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.components import bar_chart
-from src.ui.formatting import format_bs, format_detalle_df, format_int, format_margen_comanda_df
+from src.ui.formatting import (
+    format_bs,
+    format_detalle_df,
+    format_int,
+    format_margen_comanda_df,
+    format_consumo_valorizado_df,
+    format_consumo_sin_valorar_df,
+)
 from src.ui.layout import render_page_header, render_sidebar_connection_section
 
 
@@ -558,6 +567,81 @@ else:
                     st.info("Sin datos para el contexto seleccionado.")
                 else:
                     st.dataframe(format_margen_comanda_df(detalle_pnl), width="stretch")
+
+        with st.expander("Consumo valorizado de insumos", expanded=False):
+            st.caption(
+                "Insumos consumidos por producto con cantidad, WAC y costo. "
+                "Consulta logística: conciliación de inventario, detección de mermas y análisis de costos."
+            )
+            cargar_consumo = st.checkbox(
+                "Cargar consumo valorizado",
+                value=False,
+                key="consumo_valorizado_load",
+                help=(
+                    "Ejecuta la consulta sobre vw_consumo_valorizado_operativa para el contexto actual. "
+                    "Ordenado por costo_consumo DESC."
+                ),
+            )
+            limit_consumo = st.number_input(
+                "Límite consumo",
+                min_value=50,
+                max_value=2000,
+                value=300,
+                step=50,
+                key="limit_consumo_valorizado",
+                help="Máximo de productos a traer, ordenados por costo_consumo DESC.",
+            )
+
+            if cargar_consumo:
+                consumo_val = get_consumo_valorizado(
+                    conn,
+                    "vw_consumo_valorizado_operativa",
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit_consumo),
+                )
+                if consumo_val is None or consumo_val.empty:
+                    st.info("Sin datos para el contexto seleccionado.")
+                else:
+                    st.dataframe(format_consumo_valorizado_df(consumo_val), width="stretch")
+
+        with st.expander("Consumo sin valorar (sanidad de cantidades)", expanded=False):
+            st.caption(
+                "Solo cantidades consumidas, sin WAC ni costos. "
+                "Sanidad: si algo está mal aquí, no es WAC/margen sino receta/multiplicación/unidades. "
+                "Regla: si el consumo está mal, todo lo demás estará mal aunque el WAC sea perfecto."
+            )
+            cargar_sin_valorar = st.checkbox(
+                "Cargar consumo sin valorar",
+                value=False,
+                key="consumo_sin_valorar_load",
+                help=(
+                    "Ejecuta la consulta sobre vw_consumo_insumos_operativa para el contexto actual. "
+                    "Ordenado por cantidad_consumida_base DESC."
+                ),
+            )
+            limit_sin_valorar = st.number_input(
+                "Límite sin valorar",
+                min_value=50,
+                max_value=2000,
+                value=300,
+                step=50,
+                key="limit_consumo_sin_valorar",
+                help="Máximo de productos a traer, ordenados por cantidad_consumida_base DESC.",
+            )
+
+            if cargar_sin_valorar:
+                consumo_sin_val = get_consumo_sin_valorar(
+                    conn,
+                    "vw_consumo_insumos_operativa",
+                    filters,
+                    mode_for_metrics,
+                    limit=int(limit_sin_valorar),
+                )
+                if consumo_sin_val is None or consumo_sin_val.empty:
+                    st.info("Sin datos para el contexto seleccionado.")
+                else:
+                    st.dataframe(format_consumo_sin_valorar_df(consumo_sin_val), width="stretch")
     except Exception as exc:
         st.error(f"Error calculando P&L: {exc}")
         _maybe_render_sql_debug(exc)
