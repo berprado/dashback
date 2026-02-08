@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import partial
+
 import streamlit as st
 
 from src.db import get_connection
@@ -26,7 +28,7 @@ from src.metrics import (
 )
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
-from src.ui.components import bar_chart
+from src.ui.components import bar_chart, line_chart, pie_chart, render_chart_section
 from src.ui.formatting import (
     format_bs,
     format_detalle_df,
@@ -36,7 +38,7 @@ from src.ui.formatting import (
     format_consumo_sin_valorar_df,
     format_cogs_comanda_df,
 )
-from src.ui.layout import render_page_header, render_sidebar_connection_section
+from src.ui.layout import render_page_header, render_sidebar_connection_section, render_filter_context_badge
 
 
 st.set_page_config(page_title="Dashback", layout="wide")
@@ -89,6 +91,38 @@ with st.sidebar:
             "Si está activo, ventas/gráficos se calculan aceptando IMPRESO cuando la vista lo marca como IMPRESO "
             "o cuando vw_comanda_ultima_impresion indica IMPRESO. Útil cuando bar_comanda.estado_impresion queda NULL."
         ),
+    )
+    
+    st.divider()
+    st.header("Gráficos")
+    limit_top_productos = st.number_input(
+        "Límite top productos",
+        min_value=5,
+        max_value=100,
+        value=20,
+        step=5,
+        help="Número máximo de productos en el ranking",
+    )
+    limit_top_usuarios = st.number_input(
+        "Límite ventas por usuario",
+        min_value=5,
+        max_value=100,
+        value=20,
+        step=5,
+        help="Número máximo de usuarios en el ranking",
+    )
+    
+    grafico_categoria = st.radio(
+        "Gráfico de categorías",
+        ["Barras", "Torta"],
+        index=0,
+        help="Tipo de visualización para ventas por categoría",
+    )
+    
+    mostrar_promedio_hora = st.checkbox(
+        "Mostrar promedio en ventas por hora",
+        value=True,
+        help="Agrega línea horizontal con el promedio de ventas por hora",
     )
 
 
@@ -816,118 +850,141 @@ else:
         st.error(f"Error cargando estado operativo: {exc}")
         _maybe_render_sql_debug(exc)
 
+render_filter_context_badge(filters, mode_for_metrics, ventas_use_impresion_log)
+
 g1, g2 = st.columns(2)
 
 with g1:
-    st.subheader("Ventas por hora")
-    st.caption(
-        "Ventas finalizadas agrupadas por HOUR(fecha_emision) en el contexto actual "
-        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+    render_chart_section(
+        title="Ventas por hora",
+        caption=(
+            "Ventas finalizadas agrupadas por HOUR(fecha_emision) en el contexto actual "
+            + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+        ),
+        data_fn=partial(
+            get_ventas_por_hora,
+            conn,
+            startup.view_name if startup else "",
+            filters,
+            mode_for_metrics,
+            use_impresion_log=ventas_use_impresion_log,
+        ),
+        chart_fn=lambda df: line_chart(
+            df, 
+            x="hora", 
+            y="total_vendido", 
+            title=None, 
+            money=True,
+            hover_data={"comandas": True, "items": True},
+            markers=True,
+            show_average=mostrar_promedio_hora,
+        ),
+        conn=conn,
+        startup=startup,
+        debug_fn=_maybe_render_sql_debug,
+        check_realtime_empty=True,
     )
-    if conn is None or startup is None:
-        st.info("Conecta a la base de datos para ver ventas por hora.")
-    else:
-        try:
-            por_hora = get_ventas_por_hora(
-                conn,
-                startup.view_name,
-                filters,
-                mode_for_metrics,
-                use_impresion_log=ventas_use_impresion_log,
-            )
-            if por_hora is None or por_hora.empty:
-                if startup.mode == "realtime" and not startup.has_rows:
-                    st.info("Aún no se registraron ventas en esta operativa.")
-                else:
-                    st.info("Sin datos para el rango seleccionado.")
-            else:
-                fig = bar_chart(por_hora, x="hora", y="total_vendido", title=None, money=True)
-                st.plotly_chart(fig, width="stretch")
-        except Exception as exc:
-            st.error(f"Error cargando ventas por hora: {exc}")
-            _maybe_render_sql_debug(exc)
 
 with g2:
-    st.subheader("Ventas por categoría")
-    st.caption(
-        "Ventas finalizadas agrupadas por categoría en el contexto actual "
-        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
-    )
-    if conn is None or startup is None:
-        st.info("Conecta a la base de datos para ver ventas por categoría.")
-    else:
-        try:
-            por_categoria = get_ventas_por_categoria(
-                conn,
-                startup.view_name,
-                filters,
-                mode_for_metrics,
-                use_impresion_log=ventas_use_impresion_log,
+    render_chart_section(
+        title="Ventas por categoría",
+        caption=(
+            "Ventas finalizadas agrupadas por categoría en el contexto actual "
+            + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+        ),
+        data_fn=partial(
+            get_ventas_por_categoria,
+            conn,
+            startup.view_name if startup else "",
+            filters,
+            mode_for_metrics,
+            use_impresion_log=ventas_use_impresion_log,
+        ),
+        chart_fn=(
+            lambda df: bar_chart(
+                df, 
+                x="categoria", 
+                y="total_vendido", 
+                title=None, 
+                money=True,
+                hover_data={"unidades": True, "comandas": True},
             )
-            if por_categoria is None or por_categoria.empty:
-                st.info("Sin datos para el rango seleccionado.")
-            else:
-                fig = bar_chart(por_categoria, x="categoria", y="total_vendido", title=None, money=True)
-                st.plotly_chart(fig, width="stretch")
-        except Exception as exc:
-            st.error(f"Error cargando ventas por categoría: {exc}")
-            _maybe_render_sql_debug(exc)
+            if grafico_categoria == "Barras"
+            else pie_chart(
+                df,
+                names="categoria",
+                values="total_vendido",
+                title=None,
+                money=True,
+                hover_data=["unidades", "comandas"],
+            )
+        ),
+        conn=conn,
+        startup=startup,
+        debug_fn=_maybe_render_sql_debug,
+    )
 
 g3, g4 = st.columns(2)
 
 with g3:
-    st.subheader("Top productos")
-    st.caption(
-        "Ranking por total vendido de ventas finalizadas en el contexto actual "
-        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+    render_chart_section(
+        title="Top productos",
+        caption=(
+            "Ranking por total vendido de ventas finalizadas en el contexto actual "
+            + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+        ),
+        data_fn=partial(
+            get_top_productos,
+            conn,
+            startup.view_name if startup else "",
+            filters,
+            mode_for_metrics,
+            limit=int(limit_top_productos),
+            use_impresion_log=ventas_use_impresion_log,
+        ),
+        chart_fn=lambda df: bar_chart(
+            df, 
+            x="total_vendido", 
+            y="nombre", 
+            title=None, 
+            orientation="h", 
+            money=True,
+            hover_data={"categoria": True, "unidades": True},
+        ),
+        conn=conn,
+        startup=startup,
+        debug_fn=_maybe_render_sql_debug,
     )
-    if conn is None or startup is None:
-        st.info("Conecta a la base de datos para ver top productos.")
-    else:
-        try:
-            top = get_top_productos(
-                conn,
-                startup.view_name,
-                filters,
-                mode_for_metrics,
-                limit=20,
-                use_impresion_log=ventas_use_impresion_log,
-            )
-            if top is None or top.empty:
-                st.info("Sin datos para el rango seleccionado.")
-            else:
-                fig = bar_chart(top, x="total_vendido", y="nombre", title=None, orientation="h", money=True)
-                st.plotly_chart(fig, width="stretch")
-        except Exception as exc:
-            st.error(f"Error cargando top productos: {exc}")
-            _maybe_render_sql_debug(exc)
 
 with g4:
-    st.subheader("Ventas por usuario")
-    st.caption(
-        "Ranking por total vendido de ventas finalizadas en el contexto actual "
-        + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+    render_chart_section(
+        title="Ventas por usuario",
+        caption=(
+            "Ranking por total vendido de ventas finalizadas en el contexto actual "
+            + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
+        ),
+        data_fn=partial(
+            get_ventas_por_usuario,
+            conn,
+            startup.view_name if startup else "",
+            filters,
+            mode_for_metrics,
+            limit=int(limit_top_usuarios),
+            use_impresion_log=ventas_use_impresion_log,
+        ),
+        chart_fn=lambda df: bar_chart(
+            df, 
+            x="total_vendido", 
+            y="usuario_reg", 
+            title=None, 
+            orientation="h", 
+            money=True,
+            hover_data={"comandas": True, "items": True, "ticket_promedio": ":.2f"},
+        ),
+        conn=conn,
+        startup=startup,
+        debug_fn=_maybe_render_sql_debug,
     )
-    if conn is None or startup is None:
-        st.info("Conecta a la base de datos para ver ventas por usuario.")
-    else:
-        try:
-            por_usuario = get_ventas_por_usuario(
-                conn,
-                startup.view_name,
-                filters,
-                mode_for_metrics,
-                limit=20,
-                use_impresion_log=ventas_use_impresion_log,
-            )
-            if por_usuario is None or por_usuario.empty:
-                st.info("Sin datos para el rango seleccionado.")
-            else:
-                fig = bar_chart(por_usuario, x="total_vendido", y="usuario_reg", title=None, orientation="h", money=True)
-                st.plotly_chart(fig, width="stretch")
-        except Exception as exc:
-            st.error(f"Error cargando ventas por usuario: {exc}")
-            _maybe_render_sql_debug(exc)
 
 st.subheader("Detalle")
 if conn is None or startup is None:

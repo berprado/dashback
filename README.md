@@ -99,7 +99,13 @@ Capturas:
    - `estado_impresion=NULL` puede significar “aún no procesada/impresa” o “dato faltante”; se interpreta junto con `estado_comanda`.
    - Impresión pendiente: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
    - Sin estado impresión: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
-- **Gráficos (2 columnas)**: ventas por hora, por categoría, top productos, ventas por usuario.
+- **Gráficos (2 columnas)**: 
+   - **Ventas por hora** (línea con marcadores): tendencia temporal con comandas/ítems en tooltip. Opción de línea de promedio.
+   - **Ventas por categoría** (barras o torta): distribución con unidades/comandas en tooltip. Toggle barras/pie chart.
+   - **Top productos** (barras horizontales): ranking con categoría/unidades en tooltip. Límite configurable (5-100).
+   - **Ventas por usuario** (barras horizontales): ranking con comandas/ítems/ticket promedio en tooltip. Límite configurable (5-100).
+   - **Badge de contexto**: muestra filtros aplicados y estado del toggle de impresión.
+   - **Exportación**: botón “⬇️ Descargar CSV” en cada gráfico.
 - **Detalle** (últimas 500 filas) bajo demanda.
    - Nota: las columnas monetarias del detalle se formatean como texto para asegurar consistencia visual; por eso, si ordenas esas columnas, el orden puede ser **lexicográfico** (texto) en lugar de numérico.
 - **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas/objetos requeridos (incluye log de impresión).

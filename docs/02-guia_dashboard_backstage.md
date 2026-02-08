@@ -413,8 +413,11 @@ Ejemplos reales de funciones (ver archivo): `get_kpis(...)`, `get_estado_operati
 4. Cortesías (KPIs)
 5. Estado operativo (comandas + impresión) + IDs bajo demanda
 6. Gráficos en 2 columnas:
-  - Ventas por hora | Ventas por categoría
-  - Top productos   | Ventas por usuario
+  - Ventas por hora (línea con promedio opcional) | Ventas por categoría (barras o torta)
+  - Top productos (límite configurable)   | Ventas por usuario (límite configurable)
+  - Badge de contexto: muestra filtros aplicados y estado del toggle de impresión
+  - Tooltips enriquecidos: cada gráfico muestra datos adicionales en hover
+  - Exportación: botón CSV en cada gráfico
 7. Tabla detalle bajo demanda
 
 Nota de formato (implementación actual):

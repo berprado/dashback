@@ -112,6 +112,28 @@ Esta consulta aísla el problema de cantidades del problema de costos: si algo f
 Se agregó el **COGS por comanda** bajo demanda (expander), mostrando solo `cogs_comanda` (sin precio de venta).
 Ideal para cortesías (tienen COGS pero no ventas) y auditoría de consumo puro. Bisagra entre inventario y finanzas.
 
+### Mejoras en gráficos (optimización y UX)
+
+Se refactorizo toda la sección de gráficos para eliminar redundancias y mejorar la experiencia:
+
+1. **Refactorización de código**: Creado helper `render_chart_section()` que reduce ~120 líneas de código duplicado a ~80 (-33%).
+
+2. **Tooltips enriquecidos**: Los 4 gráficos ahora muestran información adicional en hover (comandas, ítems, ticket promedio, unidades, categorías).
+
+3. **Manejo unificado de vacíos**: Consistencia en mensajes cuando no hay datos, distinguiendo tiempo real sin actividad vs filtros sin resultados.
+
+4. **Ventas por hora**: Cambiado de barras a **gráfico de línea** (mejor semántica temporal) con opción de **línea de promedio** horizontal.
+
+5. **Límites configurables**: Agregados controles en sidebar para top productos (5-100) y ventas por usuario (5-100).
+
+6. **Badge de contexto**: Muestra visualmente el filtro aplicado (📋 Op. X, 📅 Fechas, ⏱️ Tiempo real) y estado del toggle de impresión (📦 Log impresión: ON).
+
+7. **Toggle barras/torta**: Ventas por categoría ahora soporta visualización como **pie chart** (muestra porcentajes y proporciones).
+
+8. **Exportación CSV**: Cada gráfico incluye botón **“⬇️ Descargar CSV”** para exportar los datos.
+
+9. **Biblioteca de componentes extendida**: Agregados `line_chart()`, `pie_chart()`, `area_chart()` con formato Bolivia integrado y soporte completo de hover_data.
+
 ### 4.4 Estado operativo (operación / impresión)
 
 - Comandas pendientes
