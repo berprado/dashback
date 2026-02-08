@@ -75,7 +75,7 @@ def render_filter_context_badge(
     if parts:
         badge_text = " • ".join(parts)
         st.markdown(
-            f'<div style="background-color: #f0f2f6; padding: 8px 12px; '
+            f'<div style="background-color: #f0f2f6; color: #262730; padding: 8px 12px; '
             f'border-radius: 4px; margin-bottom: 12px; font-size: 14px; '
             f'text-align: center;">{badge_text}</div>',
             unsafe_allow_html=True,
