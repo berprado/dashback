@@ -1,22 +1,26 @@
 # Consultas COGS y WAC
 
-## Consulta de resumen económico de la operativa
+Documento tecnico para onboarding. Resume el origen y la trazabilidad de los datos que alimentan costos (COGS), ventas y margen por operativa.
 
-**Qué hace**
-- Entrega el P&L consolidado de la operativa (solo ventas reales, sin cortesías).
+## Convenciones y alcance
+
+- Las consultas filtran por `id_operacion` (variable de contexto principal).
+- El P&L consolidado considera solo ventas reales (comandas `VENTA`), sin cortesias.
+- Las vistas listadas son la fuente oficial; no se deben reinterpretar campos a nivel de UI.
+
+## Consulta de resumen economico de la operativa
+
+**Objetivo**
+- Obtener el P&L consolidado de una operativa a partir de `vw_margen_comanda`.
 
 **Campos**
-- `ventas`: Suma todo lo facturado en la operativa (comandas VENTA).
-- `cogs`: Suma el costo total de los insumos consumidos (combos + comandables si ya están integrados).
-- `margen`: Utilidad bruta total = ventas − cogs.
+- `ventas`: total facturado en la operativa (solo comandas `VENTA`).
+- `cogs`: costo total de insumos consumidos (combos + comandables integrados).
+- `margen`: utilidad bruta total, $margen = ventas - cogs$.
 
-**Para qué sirve**
-- Validación contra `ope_conciliacion`.
-- Base directa para dashboard financiero.
-- Base directa para margen por día / operativa.
-- Base directa para control de rentabilidad global.
-
-👉 Esta es la consulta ejecutiva. La que mira el dueño.
+**Uso tipico**
+- Validacion contra `ope_conciliacion`.
+- Fuente base para dashboard financiero y control de rentabilidad global.
 
 ```sql
 SELECT
@@ -31,21 +35,17 @@ WHERE id_operacion = 1125;
 
 ## Consulta de detalle por comanda
 
-**Qué hace**
-- Devuelve una fila por comanda.
+**Objetivo**
+- Exponer una fila por comanda con ventas, costo y margen para auditoria.
 
 **Campos**
 - `total_venta`
 - `cogs_comanda`
 - `margen_comanda`
 
-**Para qué sirve**
-- Auditoría fina para detectar comandas con margen anómalo.
-- Auditoría fina para detectar errores de receta / WAC.
-- Análisis operativo sobre qué tipo de comandas generan mejor margen.
-- Análisis operativo sobre qué bartender / turno vende mejor.
-
-👉 Esta es la consulta táctica. La que mira el jefe de barra.
+**Uso tipico**
+- Deteccion de comandas con margen anomalo.
+- Validacion de recetas y WAC por turno, bartender o tipo de comanda.
 
 ```sql
 SELECT *
@@ -57,23 +57,18 @@ WHERE id_operacion = 1125;
 
 ## Consulta de consumo valorizado de insumos
 
-**Qué hace**
-- Muestra qué insumos se consumieron realmente, agregados por producto.
+**Objetivo**
+- Ver consumo real de insumos valorizado a nivel de producto.
 
 **Campos**
-- `cantidad_consumida_base` (en unidades base)
+- `cantidad_consumida_base` (unidades base)
 - `wac_operativa` / `wac_global`
-- `costo_consumo` total por producto
+- `costo_consumo` (costo total por producto)
 
-**Para qué sirve**
-- Conciliar contra inventario físico.
-- Detectar mermas.
-- Detectar recetas mal definidas.
-- Detectar errores de multiplicación de cantidades.
-- Base para análisis de costos por producto.
-- Base para renegociación con proveedores.
-
-👉 Esta es la consulta logística. La que mira inventarios y control.
+**Uso tipico**
+- Conciliacion contra inventario fisico.
+- Deteccion de mermas, recetas mal definidas o errores de multiplicacion.
+- Analisis de costos por producto y soporte a renegociacion con proveedores.
 
 ```sql
 SELECT *
@@ -85,11 +80,11 @@ WHERE id_operacion = 1125;
 
 ## Consumo sin valorar (sanidad de cantidades)
 
-**Por qué es clave**
-- Aísla el problema de cantidades del problema de costos.
-- Si algo está mal aquí: no es WAC, no es margen, es receta / multiplicación / unidades.
+**Objetivo**
+- Aislar la consistencia de cantidades sin introducir el costo.
 
-👉 Regla de oro: si el consumo está mal, todo lo demás estará mal aunque el WAC sea perfecto.
+**Criterio de diagnostico**
+- Si el consumo es incorrecto aqui, el problema es de receta, unidades o multiplicacion, no de WAC ni de margen.
 
 ```sql
 SELECT *
@@ -101,12 +96,12 @@ WHERE id_operacion = 1125;
 
 ## COGS por comanda (sin ventas)
 
-**Para qué sirve**
-- Ver solo el costo, sin precio de venta.
-- Ideal para cortesías (que no tienen venta pero sí COGS).
-- Ideal para auditoría de consumo puro.
+**Objetivo**
+- Exponer costo puro por comanda, sin precio de venta.
 
-👉 Esta consulta es la bisagra entre inventario y finanzas.
+**Uso tipico**
+- Cortesias (no tienen venta, pero si COGS).
+- Auditoria de consumo puro y comparacion con ventas.
 
 ```sql
 SELECT *
@@ -116,16 +111,18 @@ WHERE id_operacion = 1125;
 
 ---
 
-## Mapa mental
+## Trazabilidad de datos (mapa de origen)
 
-1. Recetas + Cantidades vendidas
+1. Recetas + cantidades vendidas
 2. `vw_combo_detalle_operacion`
 3. `vw_consumo_insumos_operativa` (sanidad de cantidades)
 4. `vw_consumo_valorizado_operativa` (costo por producto)
 5. `vw_cogs_comanda`
 6. `vw_margen_comanda`
 7. Resumen ejecutivo (ventas / cogs / margen)
-no es margen
+4. `vw_consumo_valorizado_operativa` (costo por producto)
 
+5. `vw_cogs_comanda`
 
+6. `vw_margen_comanda`
 
