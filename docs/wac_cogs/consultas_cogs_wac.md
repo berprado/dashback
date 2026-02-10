@@ -130,3 +130,22 @@ WHERE id_operacion = :id_operacion;
 6. `vw_margen_comanda`
 7. Resumen ejecutivo (ventas / cogs / margen)
 
+# Explicación de la Trazabilidad de Datos
+
+Este mapa de origen describe el **flujo de transformación de datos** que va desde las recetas base hasta el resumen ejecutivo de márgenes y rentabilidad. Es una arquitectura de datos en **capas sucesivas**, donde cada vista se construye sobre la anterior, refinando y enriqueciendo la información.
+
+El proceso comienza con las **recetas y cantidades vendidas**, que son los datos más básicos: qué productos se vendieron y qué ingredientes se necesitan para prepararlos según las fórmulas definidas. Esta información fundamental alimenta todo el análisis posterior.
+
+La vista `vw_combo_detalle_operacion` actúa como el **primer nivel de agregación**, combinando los datos de ventas (comandas) con los detalles de productos y sus componentes. Aquí se resuelven casos especiales como combos o productos compuestos, desagregándolos en sus elementos individuales para un análisis más preciso.
+
+`vw_consumo_insumos_operativa` realiza una **validación de sanidad de cantidades**, asegurando que los cálculos de consumo de ingredientes sean coherentes y estén dentro de rangos esperados. Esta capa actúa como punto de control de calidad de datos antes de aplicar valorización económica.
+
+Con `vw_consumo_valorizado_operativa` se introduce el **componente financiero**: cada insumo consumido se multiplica por su costo unitario (probablemente usando el método WAC - Weighted Average Cost), generando el costo real por producto vendido. Esta es la capa crítica donde el inventario físico se convierte en cifras monetarias.
+
+`vw_cogs_comanda` (Cost of Goods Sold por comanda) **agrega todos los costos** a nivel de cada venta individual, sumando el costo de todos los productos que componían esa comanda. Aquí ya tenemos el COGS real de cada transacción.
+
+`vw_margen_comanda` **cruza ventas con costos**: toma el monto de venta de cada comanda (desde `comandas_v6` u otra fuente) y le resta el COGS calculado, obteniendo el margen bruto por comanda. Aquí se pueden calcular también porcentajes de margen y otros KPIs a nivel transaccional.
+
+Finalmente, el **resumen ejecutivo** consolida toda esta información en métricas agregadas: ventas totales, COGS totales y márgenes por período, operación, categoría de producto, etc. Esta última capa es la que típicamente se presenta en el dashboard para la toma de decisiones estratégicas.
+
+Este diseño en cascada permite **auditar y diagnosticar** problemas en cualquier nivel: si el margen final parece incorrecto, puedes rastrear hacia atrás a través de cada vista hasta identificar si el problema está en las recetas, los costos unitarios, las cantidades vendidas o algún error de cálculo intermedio.
