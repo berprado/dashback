@@ -720,10 +720,14 @@ def q_consumo_valorizado(view_name: str, where_sql: str, *, limit: int) -> str:
     SELECT
         v.id_operacion,
         v.id_producto,
+        p.nombre AS nombre_producto,
         v.cantidad_consumida_base,
         v.wac_operativa,
         v.costo_consumo
     FROM {view_name} v
+    LEFT JOIN alm_producto p
+        ON p.id = v.id_producto
+       AND p.estado = 'HAB'
     {where_sql}
     ORDER BY v.costo_consumo DESC
     LIMIT :limit;
@@ -742,8 +746,12 @@ def q_consumo_sin_valorar(view_name: str, where_sql: str, *, limit: int) -> str:
     SELECT
         v.id_operacion,
         v.id_producto,
+        p.nombre AS nombre_producto,
         v.cantidad_consumida_base
     FROM {view_name} v
+    LEFT JOIN alm_producto p
+        ON p.id = v.id_producto
+       AND p.estado = 'HAB'
     {where_sql}
     ORDER BY v.cantidad_consumida_base DESC
     LIMIT :limit;

@@ -140,6 +140,19 @@ def format_consumo_valorizado_df(df: pd.DataFrame) -> pd.DataFrame:
         if col in out.columns:
             out[col] = out[col].apply(lambda v: format_bs(v, decimals=2))
     
+    # Reordenar columnas para visibilidad (nombre primero, luego métricas)
+    cols_order = [
+        "id_operacion",
+        "nombre_producto",
+        "id_producto",
+        "cantidad_consumida_base",
+        "wac_operativa",
+        "costo_consumo",
+    ]
+    cols_present = [c for c in cols_order if c in out.columns]
+    cols_remaining = [c for c in out.columns if c not in cols_present]
+    out = out[cols_present + cols_remaining]
+    
     return out
 
 
@@ -156,6 +169,17 @@ def format_consumo_sin_valorar_df(df: pd.DataFrame) -> pd.DataFrame:
         out["cantidad_consumida_base"] = out["cantidad_consumida_base"].apply(
             lambda v: format_number(v, decimals=4)
         )
+    
+    # Reordenar columnas para visibilidad (nombre primero, luego métricas)
+    cols_order = [
+        "id_operacion",
+        "nombre_producto",
+        "id_producto",
+        "cantidad_consumida_base",
+    ]
+    cols_present = [c for c in cols_order if c in out.columns]
+    cols_remaining = [c for c in out.columns if c not in cols_present]
+    out = out[cols_present + cols_remaining]
     
     return out
 
