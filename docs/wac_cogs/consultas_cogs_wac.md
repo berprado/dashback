@@ -1,189 +1,131 @@
-Detengamos nuestro avance, una parada operativa. Mientras acampamos vamos a revisar nuestro arsenal.
+# Consultas COGS y WAC
 
-Te adjunto las consulñtas que estoy utilizando. 
-Si tenemos una operativa abierta deberiamos usar ese numero de operativa, en este caso estoy usando la 1125 como referencia.
-Si no tenemos operativa abierta deberiamos permitir al usuario selecco
+## Consulta de resumen económico de la operativa
 
+**Qué hace**
+- Entrega el P&L consolidado de la operativa (solo ventas reales, sin cortesías).
 
-----
-Consulta de resumen económico de la operativa:
+**Campos**
+- `ventas`: Suma todo lo facturado en la operativa (comandas VENTA).
+- `cogs`: Suma el costo total de los insumos consumidos (combos + comandables si ya están integrados).
+- `margen`: Utilidad bruta total = ventas − cogs.
 
-¿Qué hace?
-
-Entrega el P&L consolidado de la operativa (solo ventas reales, sin cortesías):
-
-ventas
-Suma todo lo facturado en la operativa (comandas VENTA).
-
-cogs
-Suma el costo total de los insumos consumidos (combos + comandables si ya están integrados).
-
-margen
-Utilidad bruta total = ventas − cogs.
-
-¿Para qué sirve?
-
-Validación contra ope_conciliacion.
-
-Base directa para:
-
-dashboard financiero
-
-margen por día / operativa
-
-control de rentabilidad global
+**Para qué sirve**
+- Validación contra `ope_conciliacion`.
+- Base directa para dashboard financiero.
+- Base directa para margen por día / operativa.
+- Base directa para control de rentabilidad global.
 
 👉 Esta es la consulta ejecutiva. La que mira el dueño.
 
-
-
+```sql
 SELECT
     SUM(total_venta)     AS ventas,
     SUM(cogs_comanda)    AS cogs,
     SUM(margen_comanda)  AS margen
 FROM vw_margen_comanda
 WHERE id_operacion = 1125;
+```
 
-----
+---
 
------
-Consulta de detalle por comanda
+## Consulta de detalle por comanda
 
-¿Qué hace?
+**Qué hace**
+- Devuelve una fila por comanda.
 
-Devuelve una fila por comanda, con:
+**Campos**
+- `total_venta`
+- `cogs_comanda`
+- `margen_comanda`
 
-total_venta
-
-cogs_comanda
-
-margen_comanda
-
-¿Para qué sirve?
-
-Auditoría fina:
-
-detectar comandas con margen anómalo
-
-detectar errores de receta / WAC
-
-Análisis operativo:
-
-¿qué tipo de comandas generan mejor margen?
-
-¿qué bartender / turno vende mejor?
+**Para qué sirve**
+- Auditoría fina para detectar comandas con margen anómalo.
+- Auditoría fina para detectar errores de receta / WAC.
+- Análisis operativo sobre qué tipo de comandas generan mejor margen.
+- Análisis operativo sobre qué bartender / turno vende mejor.
 
 👉 Esta es la consulta táctica. La que mira el jefe de barra.
 
-
+```sql
 SELECT *
 FROM vw_margen_comanda
 WHERE id_operacion = 1125;
+```
 
------
------
+---
 
-Consulta de consumo valorizado de insumos
+## Consulta de consumo valorizado de insumos
 
-¿Qué hace?
+**Qué hace**
+- Muestra qué insumos se consumieron realmente, agregados por producto.
 
-Muestra qué insumos se consumieron realmente, agregados por producto:
+**Campos**
+- `cantidad_consumida_base` (en unidades base)
+- `wac_operativa` / `wac_global`
+- `costo_consumo` total por producto
 
-cantidad_consumida_base (en unidades base)
-
-wac_operativa / wac_global
-
-costo_consumo total por producto
-
-¿Para qué sirve?
-
-Conciliar contra inventario físico.
-
-Detectar:
-
-mermas
-
-recetas mal definidas
-
-errores de multiplicación de cantidades
-
-Base para:
-
-análisis de costos por producto
-
-renegociación con proveedores
+**Para qué sirve**
+- Conciliar contra inventario físico.
+- Detectar mermas.
+- Detectar recetas mal definidas.
+- Detectar errores de multiplicación de cantidades.
+- Base para análisis de costos por producto.
+- Base para renegociación con proveedores.
 
 👉 Esta es la consulta logística. La que mira inventarios y control.
 
+```sql
 SELECT *
 FROM vw_consumo_valorizado_operativa
 WHERE id_operacion = 1125;
+```
 
------
+---
 
------
+## Consumo sin valorar (sanidad de cantidades)
 
-Consumo sin valorar (sanidad de cantidades)
+**Por qué es clave**
+- Aísla el problema de cantidades del problema de costos.
+- Si algo está mal aquí: no es WAC, no es margen, es receta / multiplicación / unidades.
 
-¿Por qué es clave?
+👉 Regla de oro: si el consumo está mal, todo lo demás estará mal aunque el WAC sea perfecto.
 
-Aísla el problema de cantidades del problema de costos.
-
-Si algo está mal aquí:
-
-no es WAC
-
-no es margen
-
-es receta / multiplicación / unidades
-
-👉 Regla de oro:
-
-Si el consumo está mal, todo lo demás estará mal aunque el WAC sea perfecto.
-
+```sql
 SELECT *
 FROM vw_consumo_insumos_operativa
 WHERE id_operacion = 1125;
------
+```
 
------
+---
 
-COGS por comanda (sin ventas)
+## COGS por comanda (sin ventas)
 
-¿Para qué sirve?
-
-Ver solo el costo, sin precio de venta.
-
-Ideal para:
-
-cortesías (que no tienen venta pero sí COGS)
-
-auditoría de consumo puro
+**Para qué sirve**
+- Ver solo el costo, sin precio de venta.
+- Ideal para cortesías (que no tienen venta pero sí COGS).
+- Ideal para auditoría de consumo puro.
 
 👉 Esta consulta es la bisagra entre inventario y finanzas.
 
+```sql
 SELECT *
 FROM vw_cogs_comanda
 WHERE id_operacion = 1125;
+```
 
-----
-----
-Mapa mental:
+---
 
-Recetas + Cantidades vendidas
-        ↓
-vw_combo_detalle_operacion
-        ↓
-vw_consumo_insumos_operativa   ← (sanidad de cantidades)
-        ↓
-vw_consumo_valorizado_operativa ← (costo por producto)
-        ↓
-vw_cogs_comanda
-        ↓
-vw_margen_comanda
-        ↓
-Resumen ejecutivo (ventas / cogs / margen)
+## Mapa mental
 
------
+1. Recetas + Cantidades vendidas
+2. `vw_combo_detalle_operacion`
+3. `vw_consumo_insumos_operativa` (sanidad de cantidades)
+4. `vw_consumo_valorizado_operativa` (costo por producto)
+5. `vw_cogs_comanda`
+6. `vw_margen_comanda`
+7. Resumen ejecutivo (ventas / cogs / margen)
+no es margen
+
 
 
