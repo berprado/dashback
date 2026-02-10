@@ -2,9 +2,18 @@
 
 Documento tecnico para onboarding. Resume el origen y la trazabilidad de los datos que alimentan costos (COGS), ventas y margen por operativa.
 
+## Glosario
+
+- **COGS** (Cost of Goods Sold): costo de los insumos consumidos para producir lo vendido.
+- **WAC** (Weighted Average Cost): costo promedio ponderado de un insumo.
+- **Margen**: diferencia entre ventas y COGS, indica rentabilidad bruta.
+- **Consumo base**: cantidad de insumo expresada en la unidad de medida base del inventario.
+- **P&L**: estado de resultados (Profit & Loss), ventas menos costos.
+
 ## Convenciones y alcance
 
 - Las consultas filtran por `id_operacion` (variable de contexto principal).
+- Todas las consultas usan el placeholder `:id_operacion` para parametrizacion segura.
 - El P&L consolidado considera solo ventas reales (comandas `VENTA`), sin cortesias.
 - Las vistas listadas son la fuente oficial; no se deben reinterpretar campos a nivel de UI.
 
@@ -28,7 +37,7 @@ SELECT
     SUM(cogs_comanda)    AS cogs,
     SUM(margen_comanda)  AS margen
 FROM vw_margen_comanda
-WHERE id_operacion = 1125;
+WHERE id_operacion = :id_operacion;
 ```
 
 ---
@@ -50,7 +59,7 @@ WHERE id_operacion = 1125;
 ```sql
 SELECT *
 FROM vw_margen_comanda
-WHERE id_operacion = 1125;
+WHERE id_operacion = :id_operacion;
 ```
 
 ---
@@ -73,7 +82,7 @@ WHERE id_operacion = 1125;
 ```sql
 SELECT *
 FROM vw_consumo_valorizado_operativa
-WHERE id_operacion = 1125;
+WHERE id_operacion = :id_operacion;
 ```
 
 ---
@@ -89,7 +98,7 @@ WHERE id_operacion = 1125;
 ```sql
 SELECT *
 FROM vw_consumo_insumos_operativa
-WHERE id_operacion = 1125;
+WHERE id_operacion = :id_operacion;
 ```
 
 ---
@@ -106,7 +115,7 @@ WHERE id_operacion = 1125;
 ```sql
 SELECT *
 FROM vw_cogs_comanda
-WHERE id_operacion = 1125;
+WHERE id_operacion = :id_operacion;
 ```
 
 ---
@@ -120,9 +129,4 @@ WHERE id_operacion = 1125;
 5. `vw_cogs_comanda`
 6. `vw_margen_comanda`
 7. Resumen ejecutivo (ventas / cogs / margen)
-4. `vw_consumo_valorizado_operativa` (costo por producto)
-
-5. `vw_cogs_comanda`
-
-6. `vw_margen_comanda`
 

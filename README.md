@@ -68,6 +68,7 @@
 - [docs/01-flujo_inicio_dashboard.md](docs/01-flujo_inicio_dashboard.md): lógica de arranque (tiempo real vs histórico) y casos límite.
 - [docs/02-guia_dashboard_backstage.md](docs/02-guia_dashboard_backstage.md): guía técnica por etapas + definición de vistas.
 - [docs/03-evolucion_y_mejoras.md](docs/03-evolucion_y_mejoras.md): evolución y cambios implementados (fase 1).
+- [docs/wac_cogs/consultas_cogs_wac.md](docs/wac_cogs/consultas_cogs_wac.md): guía técnica de consultas COGS y WAC (onboarding).
 
 Capturas:
 - [docs/capturas/](docs/capturas/)
