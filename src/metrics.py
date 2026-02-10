@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import pandas as pd
+
 from src.query_store import (
 	Filters,
 	build_where,
@@ -455,10 +457,6 @@ def _median_minutes_between(series) -> tuple[float | None, int]:
 	"""Devuelve (mediana_en_minutos, cantidad_de_intervalos)."""
 	if series is None:
 		return None, 0
-	try:
-		import pandas as pd
-	except Exception:
-		return None, 0
 
 	dt = pd.to_datetime(series, errors="coerce")
 	dt = dt.dropna()
@@ -522,20 +520,15 @@ def get_actividad_emision_comandas(
 	last_ts = None
 	minutes_since_last = None
 
-	try:
-		import pandas as pd
-		if recent_df is not None and not recent_df.empty and "fecha_emision" in recent_df.columns:
-			last_ts = pd.to_datetime(recent_df["fecha_emision"].max(), errors="coerce")
-			if pd.notna(last_ts):
-				now = pd.Timestamp.now()
-				delta = now - last_ts
-				minutes_since_last = float(delta.total_seconds() / 60.0)
-			else:
-				last_ts = None
-				minutes_since_last = None
-	except Exception:
-		last_ts = None
-		minutes_since_last = None
+	if recent_df is not None and not recent_df.empty and "fecha_emision" in recent_df.columns:
+		last_ts = pd.to_datetime(recent_df["fecha_emision"].max(), errors="coerce")
+		if pd.notna(last_ts):
+			now = pd.Timestamp.now()
+			delta = now - last_ts
+			minutes_since_last = float(delta.total_seconds() / 60.0)
+		else:
+			last_ts = None
+			minutes_since_last = None
 
 	recent_median_min, recent_intervals = _median_minutes_between(
 		recent_df["fecha_emision"] if recent_df is not None and "fecha_emision" in getattr(recent_df, "columns", []) else None
