@@ -27,6 +27,7 @@ from src.query_store import (
 	q_consumo_sin_valorar,
 	q_cogs_por_comanda,
 	q_ventas_por_hora,
+	q_items_por_comanda,
 )
 
 
@@ -546,3 +547,13 @@ def get_actividad_emision_comandas(
 		"all_intervals": all_intervals,
 		"recent_n": int(recent_n),
 	}
+
+
+def get_items_por_comanda(conn: Any, view_name: str, id_comanda: int) -> Any:
+	"""Obtiene los ítems consumidos de una comanda específica.
+
+	Útil para mostrar en expanders: productos, cantidades, precios, subtotales.
+	"""
+
+	sql = q_items_por_comanda(view_name, id_comanda)
+	return _run_df(conn, sql, {"id_comanda": id_comanda}, context=f"Error obteniendo ítems de comanda {id_comanda}")

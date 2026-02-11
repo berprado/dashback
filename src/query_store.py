@@ -691,18 +691,23 @@ def q_wac_cogs_summary(view_name: str, where_sql: str) -> str:
 def q_wac_cogs_detalle(view_name: str, where_sql: str, *, limit: int) -> str:
     """Detalle P&L por comanda.
 
-    Retorna una fila por comanda con venta, COGS y margen.
+    Retorna una fila por comanda con venta, COGS, margen e información contextual.
+    Incluye mesa, usuario y estado para mejor auditoría (via JOIN a bar_comanda).
     """
 
     return f"""
     SELECT
         v.id_operacion,
         v.id_comanda,
+        bc.id_mesa,
+        bc.usuario_reg,
+        bc.estado_comanda,
         v.id_barra,
         v.total_venta,
         v.cogs_comanda,
         v.margen_comanda
     FROM {view_name} v
+    LEFT JOIN bar_comanda bc ON bc.id = v.id_comanda
     {where_sql}
     ORDER BY v.id_comanda DESC
     LIMIT :limit;
@@ -763,17 +768,42 @@ def q_cogs_por_comanda(view_name: str, where_sql: str, *, limit: int) -> str:
 
     Ver solo el costo, sin precio de venta.
     Ideal para cortesías (tienen COGS pero no ventas) y auditoría de consumo puro.
-    Bisagra entre inventario y finanzas.
+    Incluye mesa, usuario y estado para contexto (via JOIN a bar_comanda).
     """
 
     return f"""
     SELECT
         v.id_operacion,
         v.id_comanda,
+        bc.id_mesa,
+        bc.usuario_reg,
+        bc.estado_comanda,
         v.id_barra,
         v.cogs_comanda
     FROM {view_name} v
+    LEFT JOIN bar_comanda bc ON bc.id = v.id_comanda
     {where_sql}
     ORDER BY v.cogs_comanda DESC
     LIMIT :limit;
+    """
+
+
+def q_items_por_comanda(view_name: str, id_comanda: int) -> str:
+    """Obtiene los ítems consumidos de una comanda específica.
+
+    Usado para mostrar detalles en expandible: qué productos se consumieron,
+    cantidades, precios unitarios y subtotales.
+    """
+
+    return f"""
+    SELECT
+        v.id_comanda,
+        v.nombre AS nombre_producto,
+        v.cantidad,
+        v.precio_venta,
+        v.sub_total,
+        v.categoria
+    FROM {view_name} v
+    WHERE v.id_comanda = :id_comanda
+    ORDER BY v.id ASC;
     """

@@ -1,7 +1,7 @@
 # Instrucciones Copilot — Dashback
 
 ## Contexto rápido
-- App Streamlit (v1.52.2) en [app.py](../app.py) contra MySQL 5.6.12.
+- App Streamlit (v1.54.0) en [app.py](../app.py) contra MySQL 5.6.12.
 - Fuente de datos por vistas: `comandas_v6` (tiempo real) y `comandas_v6_todas`/`comandas_v6_base` (histórico).
 - Diagnóstico/impresión: `vw_comanda_ultima_impresion` y `bar_comanda_impresion` pueden usarse como señal alternativa de IMPRESO cuando `bar_comanda.estado_impresion` queda NULL (la UI incluye un toggle opcional para esto).
 - Arquitectura por capas en `src/` (no usar `config/`, `data/`, `components/`).

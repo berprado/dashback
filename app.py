@@ -29,6 +29,7 @@ from src.metrics import (
 from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
 from src.startup import determine_startup_context
 from src.ui.components import bar_chart, line_chart, pie_chart, render_chart_section
+from src.ui.comanda_details import render_comanda_expanders_from_df
 from src.ui.formatting import (
     format_bs,
     format_detalle_df,
@@ -602,7 +603,11 @@ else:
                 if detalle_pnl is None or detalle_pnl.empty:
                     st.info("Sin datos para el contexto seleccionado.")
                 else:
-                    st.dataframe(format_margen_comanda_df(detalle_pnl), width="stretch")
+                    st.dataframe(format_margen_comanda_df(detalle_pnl), use_container_width=True)
+                    
+                    st.subheader("📋 Detalles de Comandas")
+                    # Usar la vista de comandas base para los ítems (no vw_margen_comanda).
+                    render_comanda_expanders_from_df(conn, detalle_pnl, startup.view_name)
 
         with st.expander("Consumo valorizado de insumos", expanded=False):
             st.caption(
@@ -715,7 +720,11 @@ else:
                 if cogs_df is None or cogs_df.empty:
                     st.info("Sin datos para el contexto seleccionado.")
                 else:
-                    st.dataframe(format_cogs_comanda_df(cogs_df), width="stretch")
+                    st.dataframe(format_cogs_comanda_df(cogs_df), use_container_width=True)
+                    
+                    st.subheader("📋 Detalles de Comandas")
+                    # Usar la vista de comandas base para los ítems (no vw_cogs_comanda).
+                    render_comanda_expanders_from_df(conn, cogs_df, startup.view_name)
     except Exception as exc:
         st.error(f"Error calculando P&L: {exc}")
         _maybe_render_sql_debug(exc)

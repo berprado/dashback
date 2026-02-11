@@ -104,9 +104,36 @@ def format_detalle_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def format_margen_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Formatea el DataFrame de margen por comanda para visualización en Streamlit."""
+    """Formatea el DataFrame de margen por comanda para visualización en Streamlit.
+    
+    Incluye información contextual (mesa, usuario, estado) para auditoría.
+    """
 
-    return format_df_money_columns(df, ["total_venta", "cogs_comanda", "margen_comanda"], decimals=2)
+    if df is None or df.empty:
+        return df
+
+    out = df.copy()
+    
+    # Formatear monetarios con 2 decimales
+    out = format_df_money_columns(out, ["total_venta", "cogs_comanda", "margen_comanda"], decimals=2)
+    
+    # Reordenar columnas para máxima legibilidad
+    cols_order = [
+        "id_operacion",
+        "id_comanda",
+        "id_mesa",
+        "usuario_reg",
+        "estado_comanda",
+        "id_barra",
+        "total_venta",
+        "cogs_comanda",
+        "margen_comanda",
+    ]
+    cols_present = [c for c in cols_order if c in out.columns]
+    cols_remaining = [c for c in out.columns if c not in cols_present]
+    out = out[cols_present + cols_remaining]
+    
+    return out
 
 
 def format_number(value: Any, *, decimals: int = 2) -> str:
@@ -185,9 +212,34 @@ def format_consumo_sin_valorar_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def format_cogs_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Formatea el DataFrame de COGS por comanda para visualización en Streamlit."""
+    """Formatea el DataFrame de COGS por comanda para visualización en Streamlit.
+    
+    Incluye información contextual (mesa, usuario, estado) para auditoría.
+    """
 
-    return format_df_money_columns(df, ["cogs_comanda"], decimals=2)
+    if df is None or df.empty:
+        return df
+
+    out = df.copy()
+    
+    # Formatear monetarios con 2 decimales
+    out = format_df_money_columns(out, ["cogs_comanda"], decimals=2)
+    
+    # Reordenar columnas para máxima legibilidad
+    cols_order = [
+        "id_operacion",
+        "id_comanda",
+        "id_mesa",
+        "usuario_reg",
+        "estado_comanda",
+        "id_barra",
+        "cogs_comanda",
+    ]
+    cols_present = [c for c in cols_order if c in out.columns]
+    cols_remaining = [c for c in out.columns if c not in cols_present]
+    out = out[cols_present + cols_remaining]
+    
+    return out
 
     axis = (axis or "y").lower().strip()
     if axis not in {"x", "y"}:
