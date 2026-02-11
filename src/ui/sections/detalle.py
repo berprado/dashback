@@ -17,7 +17,7 @@ def render_detalle_section(
     mode_for_metrics: str,
     debug_fn: Callable[[Exception], None],
 ) -> None:
-    st.subheader("Detalle")
+    st.subheader(":material/receipt_long: Detalle")
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver el detalle.")
         return

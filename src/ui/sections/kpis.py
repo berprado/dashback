@@ -18,7 +18,7 @@ def render_kpis_section(
     ventas_use_impresion_log: bool,
     debug_fn: Callable[[Exception], None],
 ) -> None:
-    st.subheader("KPIs")
+    st.subheader(":material/monitoring: KPIs")
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver KPIs.")
         return

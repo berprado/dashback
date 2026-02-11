@@ -30,7 +30,7 @@ def render_margenes_section(
     mode_for_metrics: str,
     debug_fn: Callable[[Exception], None],
 ) -> None:
-    st.subheader("Márgenes & Rentabilidad")
+    st.subheader(":material/payments: Márgenes & Rentabilidad")
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver márgenes.")
         return

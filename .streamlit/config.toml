@@ -1,6 +1,31 @@
 [theme]
-primaryColor="#f63366"
-backgroundColor="#000000"
-secondaryBackgroundColor="#212121"
-textColor="#ffffff"
-font="sans serif"
+base="dark"
+primaryColor="#F97316"
+backgroundColor="#0B0F14"
+secondaryBackgroundColor="#121826"
+textColor="#E6EAF0"
+linkColor="#7DD3FC"
+linkUnderline=false
+borderColor="#263040"
+dataframeBorderColor="#2A364A"
+dataframeHeaderBackgroundColor="#182133"
+baseRadius="10px"
+buttonRadius="8px"
+baseFontSize=14
+baseFontWeight=400
+font="'Manrope':https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&display=swap, sans-serif"
+headingFont="'Space Grotesk':https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap, sans-serif"
+codeFont="'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap, monospace"
+codeFontSize="0.85rem"
+codeFontWeight=400
+headingFontSizes=["2.1rem","1.7rem","1.35rem","1.1rem","1rem","0.9rem"]
+headingFontWeights=[700,600,600,600,600,600]
+chartCategoricalColors=["#F97316","#22D3EE","#A78BFA","#34D399","#F43F5E","#FBBF24","#60A5FA","#10B981"]
+chartSequentialColors=["#0B1220","#0F1A2B","#132339","#1C2F4C","#273A5D","#334870","#3F5685"]
+
+[theme.sidebar]
+backgroundColor="#0F141B"
+secondaryBackgroundColor="#121826"
+textColor="#D7DCE3"
+borderColor="#1F2937"
+linkColor="#7DD3FC"

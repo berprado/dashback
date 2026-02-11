@@ -6,13 +6,13 @@ import streamlit as st
 
 
 def render_page_header() -> None:
-    st.title("Dashback")
+    st.markdown("# :material/insights: Dashback")
     st.caption("Dashboard base con conexión MySQL")
 
 
 def render_sidebar_connection_section() -> tuple[bool, str]:
     with st.sidebar:
-        st.header("Conexión")
+        st.header(":material/lan: Conexión")
         st.write("Configura `.streamlit/secrets.toml` (o `.streamlit/secrets.toml.example`).")
 
         connection_options: list[tuple[str, str]] = [("Local", "mysql")]
@@ -75,7 +75,7 @@ def render_filter_context_badge(
     if parts:
         badge_text = " • ".join(parts)
         st.markdown(
-            f'<div style="background-color: #f0f2f6; color: #262730; padding: 8px 12px; '
+            f'<div style="background-color: #0F172A; color: #E5E7EB; padding: 8px 12px; border: 1px solid #1F2937; '
             f'border-radius: 4px; margin-bottom: 12px; font-size: 14px; '
             f'text-align: center;">{badge_text}</div>',
             unsafe_allow_html=True,

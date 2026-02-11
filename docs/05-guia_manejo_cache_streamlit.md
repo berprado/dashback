@@ -579,9 +579,9 @@ Implementado:
 - Conexión cacheada por sesión con `on_release` y validación opcional.
 - `@st.fragment` aplicado a secciones de KPIs, márgenes, gráficos y detalle.
 - Fallback por sesión en gráficos (último DataFrame exitoso).
+- Theming avanzado con Google Fonts, Material Symbols y paleta de charts.
 
 Pendiente / opcional:
-- Theming de charts en `.streamlit/config.toml`.
 - Fallback en KPIs/márgenes si se requiere degradación similar a gráficos.
 
 ---

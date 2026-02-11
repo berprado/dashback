@@ -269,6 +269,7 @@ Para evitar diagnósticos “a ciegas” cuando el KPI de ventas queda subestima
 - Se incorporó cache por modo (realtime sin cache, histórico con cache corto).
 - Se agregó fallback por sesión en gráficos para degradación graceful si falla la BD.
 - Se aplicó `@st.fragment` en KPIs, márgenes, gráficos y detalle para reducir reruns completos.
+- Se configuró theming avanzado (Google Fonts, Material Symbols y paleta de charts).
 
 Mejora visual:
 - Se añadieron contornos con colores diferenciados por grupo de métricas (KPIs / diagnóstico de impresión / estado operativo) para mejorar lectura rápida.

@@ -25,9 +25,9 @@ Implementado en el proyecto:
 - Red Flag #6: Conexión cacheada por sesión con `on_release` + validación opcional.
 - Lazy loading real en ítems de comandas.
 - `@st.fragment` aplicado a KPIs, márgenes, gráficos y detalle.
+- Theming avanzado con Google Fonts, Material Symbols y paleta de charts.
 
 Pendiente / opcional:
-- Theming de charts en `.streamlit/config.toml` (`chartCategoricalColors`, `chartDivergingColors`).
 - Fallback cache para KPIs/márgenes (solo implementado en gráficos).
 - Ajustes de pool/conexión según métricas reales de carga.
 

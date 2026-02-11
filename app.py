@@ -26,22 +26,28 @@ def _inject_metric_border_styles() -> None:
         Nota: Streamlit no expone color de borde por API en st.metric; se controla vía CSS.
     */
     .metric-scope div[data-testid="stMetric"] {
-        border-radius: 10px;
+        border-radius: 12px;
+        background: #0F1624;
+        padding: 6px;
+    }
+
+    .metric-scope div[data-testid="stMetric"] > div {
+        padding: 10px 12px;
     }
 
     .metric-kpis div[data-testid="stMetric"] {
-        border: 1px solid rgba(46, 134, 222, 0.95) !important; /* azul */
-        box-shadow: 0 0 0 1px rgba(46, 134, 222, 0.10) inset;
+        border: 1px solid rgba(59, 130, 246, 0.9) !important; /* azul */
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15) inset;
     }
 
     .metric-diagnostico-impresion div[data-testid="stMetric"] {
-        border: 1px solid rgba(142, 68, 173, 0.95) !important; /* morado */
-        box-shadow: 0 0 0 1px rgba(142, 68, 173, 0.10) inset;
+        border: 1px solid rgba(168, 85, 247, 0.9) !important; /* violeta */
+        box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.15) inset;
     }
 
     .metric-estado-operativo div[data-testid="stMetric"] {
-        border: 1px solid rgba(230, 126, 34, 0.95) !important; /* naranja */
-        box-shadow: 0 0 0 1px rgba(230, 126, 34, 0.10) inset;
+        border: 1px solid rgba(249, 115, 22, 0.9) !important; /* naranja */
+        box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.15) inset;
     }
 </style>
         """,
@@ -55,7 +61,7 @@ _inject_metric_border_styles()
 
 
 with st.sidebar:
-    st.header("Debug")
+    st.header(":material/bug_report: Debug")
     debug_sql = st.checkbox("Mostrar SQL/params en errores", value=False)
     ventas_use_impresion_log = st.checkbox(
         "Ventas: usar log de impresión",
@@ -67,7 +73,7 @@ with st.sidebar:
     )
     
     st.divider()
-    st.header("Gráficos")
+    st.header(":material/insights: Gráficos")
     limit_top_productos = st.number_input(
         "Límite top productos",
         min_value=5,
@@ -124,7 +130,7 @@ try:
 
     if startup.mode == "realtime":
         with st.sidebar:
-            st.header("Tiempo real")
+            st.header(":material/timelapse: Tiempo real")
             st.button("Actualizar", help="Vuelve a consultar la base y refresca el dashboard")
 
     if startup.mode == "realtime":
@@ -142,7 +148,7 @@ try:
             ops = ops_df.to_dict(orient="records")
 
         with st.sidebar:
-            st.header("Histórico")
+            st.header(":material/history: Histórico")
             filtro_historico = st.radio(
                 "Filtrar histórico por",
                 ["Operativas", "Fechas"],

@@ -23,7 +23,7 @@ def render_estado_operativo_section(
     mode_for_metrics: str,
     debug_fn: Callable[[Exception], None],
 ) -> None:
-    st.subheader("Estado operativo")
+    st.subheader(":material/fact_check: Estado operativo")
     if conn is None or startup is None:
         st.info("Conecta a la base de datos para ver estado operativo.")
         return
