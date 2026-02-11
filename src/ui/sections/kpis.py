@@ -8,6 +8,7 @@ from src.metrics import get_actividad_emision_comandas, get_kpis
 from src.ui.formatting import format_bs, format_int
 
 
+@st.fragment
 def render_kpis_section(
     *,
     conn: Any,

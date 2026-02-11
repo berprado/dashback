@@ -665,8 +665,8 @@ def export_csv_button(
 
 ## 🔗 Referencias
 
-- [docs/02-guia_dashboard_backstage.md](docs/02-guia_dashboard_backstage.md) — Arquitectura y vistas
-- [docs/03-evolucion_y_mejoras.md](docs/03-evolucion_y_mejoras.md) — Historial de cambios
+- [docs/02-guia_dashboard_backstage.md](../../docs/02-guia_dashboard_backstage.md) — Arquitectura y vistas
+- [docs/03-evolucion_y_mejoras.md](../../docs/03-evolucion_y_mejoras.md) — Historial de cambios
 - [Streamlit 1.53 Release Notes](https://docs.streamlit.io/develop/quick-reference/release-notes) — Nuevas features de cache
 - [Streamlit 1.54 Release Notes](https://docs.streamlit.io/develop/quick-reference/release-notes) — Chart theming
 

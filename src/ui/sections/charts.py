@@ -62,6 +62,7 @@ def render_charts_section(
             startup=startup,
             debug_fn=debug_fn,
             check_realtime_empty=True,
+            fallback_key="ventas_por_hora",
         )
 
     with g2:
@@ -101,6 +102,7 @@ def render_charts_section(
             conn=conn,
             startup=startup,
             debug_fn=debug_fn,
+            fallback_key="ventas_por_categoria",
         )
 
     g3, g4 = st.columns(2)
@@ -133,6 +135,7 @@ def render_charts_section(
             conn=conn,
             startup=startup,
             debug_fn=debug_fn,
+            fallback_key="top_productos",
         )
 
     with g4:
@@ -163,4 +166,5 @@ def render_charts_section(
             conn=conn,
             startup=startup,
             debug_fn=debug_fn,
+            fallback_key="ventas_por_usuario",
         )

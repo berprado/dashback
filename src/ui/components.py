@@ -185,6 +185,7 @@ def render_chart_section(
     allow_csv_export: bool = True,
     fallback_data: pd.DataFrame | None = None,
     show_retry: bool = True,
+    fallback_key: str | None = None,
 ) -> None:
     """Helper para renderizar secciones de gráficos con patrón unificado.
     
@@ -209,13 +210,15 @@ def render_chart_section(
     
     try:
         df = data_fn()
-        
+
         if df is None or df.empty:
             if check_realtime_empty and startup.mode == "realtime" and not startup.has_rows:
                 st.info("Aún no se registraron ventas en esta operativa.")
             else:
                 st.info(empty_msg)
         else:
+            if fallback_key:
+                st.session_state[f"chart_fallback_{fallback_key}"] = df.copy()
             fig = chart_fn(df)
             st.plotly_chart(fig, width="stretch")
             
@@ -241,6 +244,8 @@ def render_chart_section(
                 key=f"retry_{title.lower().replace(' ', '_')}",
             ):
                 st.rerun()
+        if fallback_data is None and fallback_key:
+            fallback_data = st.session_state.get(f"chart_fallback_{fallback_key}")
         if fallback_data is not None and not fallback_data.empty:
             st.caption("Mostrando datos en cache:")
             st.dataframe(fallback_data, width="stretch")

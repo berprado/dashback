@@ -21,6 +21,7 @@ from src.ui.formatting import (
 )
 
 
+@st.fragment
 def render_margenes_section(
     *,
     conn: Any,
