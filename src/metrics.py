@@ -52,11 +52,16 @@ class QueryExecutionError(RuntimeError):
 		self.original_exc = original_exc
 
 
-def _run_df(conn: Any, sql: str, params: dict[str, Any], *, context: str):
+def _run_df(conn: Any, sql: str, params: dict[str, Any], *, context: str, ttl: int | None = None):
 	try:
-		return fetch_dataframe(conn, sql, params)
+		return fetch_dataframe(conn, sql, params, ttl=ttl)
 	except Exception as exc:
 		raise QueryExecutionError(context, sql=sql, params=params, original_exc=exc) from exc
+
+
+def _ttl_for_mode(mode: str) -> int:
+	"""TTL por modo: realtime sin cache, histórico con cache corto."""
+	return 0 if mode == "none" else 300
 
 
 def _to_float(value: Any) -> float:
@@ -86,7 +91,7 @@ def get_kpis(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_kpis(view_name, where_sql)
-	df = _run_df(conn, sql, params, context="Error ejecutando KPIs")
+	df = _run_df(conn, sql, params, context="Error ejecutando KPIs", ttl=_ttl_for_mode(mode))
 
 	if df is None or df.empty:
 		return {
@@ -136,7 +141,7 @@ def get_wac_cogs_summary(
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_wac_cogs_summary(view_name, where_sql)
-	df = _run_df(conn, sql, params, context="Error ejecutando P&L (WAC/COGS)")
+	df = _run_df(conn, sql, params, context="Error ejecutando P&L (WAC/COGS)", ttl=_ttl_for_mode(mode))
 
 	if df is None or df.empty:
 		return {
@@ -168,7 +173,13 @@ def get_wac_cogs_detalle(
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	params["limit"] = int(limit)
 	sql = q_wac_cogs_detalle(view_name, where_sql, limit=int(limit))
-	return _run_df(conn, sql, params, context="Error ejecutando detalle P&L (WAC/COGS)")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando detalle P&L (WAC/COGS)",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_consumo_valorizado(
@@ -184,7 +195,13 @@ def get_consumo_valorizado(
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	params["limit"] = int(limit)
 	sql = q_consumo_valorizado(view_name, where_sql, limit=int(limit))
-	return _run_df(conn, sql, params, context="Error ejecutando consumo valorizado")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando consumo valorizado",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_consumo_sin_valorar(
@@ -200,7 +217,13 @@ def get_consumo_sin_valorar(
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	params["limit"] = int(limit)
 	sql = q_consumo_sin_valorar(view_name, where_sql, limit=int(limit))
-	return _run_df(conn, sql, params, context="Error ejecutando consumo sin valorar")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando consumo sin valorar",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_cogs_por_comanda(
@@ -216,7 +239,13 @@ def get_cogs_por_comanda(
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	params["limit"] = int(limit)
 	sql = q_cogs_por_comanda(view_name, where_sql, limit=int(limit))
-	return _run_df(conn, sql, params, context="Error ejecutando COGS por comanda")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando COGS por comanda",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str) -> dict[str, Any]:
@@ -227,7 +256,7 @@ def get_estado_operativo(conn: Any, view_name: str, filters: Filters, mode: str)
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_estado_operativo(view_name, where_sql)
-	df = _run_df(conn, sql, params, context="Error ejecutando estado operativo")
+	df = _run_df(conn, sql, params, context="Error ejecutando estado operativo", ttl=_ttl_for_mode(mode))
 
 	if df is None or df.empty:
 		return {
@@ -258,7 +287,13 @@ def get_ids_comandas_pendientes(
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_pendientes(view_name, where_sql, limit=limit)
-	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas pendientes")
+	df = _run_df(
+		conn,
+		sql,
+		params,
+		context="Error obteniendo IDs de comandas pendientes",
+		ttl=_ttl_for_mode(mode),
+	)
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []
@@ -283,7 +318,13 @@ def get_ids_comandas_no_impresas(
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_no_impresas(view_name, where_sql, limit=limit)
-	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas no impresas")
+	df = _run_df(
+		conn,
+		sql,
+		params,
+		context="Error obteniendo IDs de comandas no impresas",
+		ttl=_ttl_for_mode(mode),
+	)
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []
@@ -308,7 +349,13 @@ def get_ids_comandas_impresion_pendiente(
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_impresion_pendiente(view_name, where_sql, limit=limit)
-	df = _run_df(conn, sql, params, context="Error obteniendo IDs con impresión pendiente")
+	df = _run_df(
+		conn,
+		sql,
+		params,
+		context="Error obteniendo IDs con impresión pendiente",
+		ttl=_ttl_for_mode(mode),
+	)
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []
@@ -333,7 +380,13 @@ def get_ids_comandas_sin_estado_impresion(
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_sin_estado_impresion(view_name, where_sql, limit=limit)
-	df = _run_df(conn, sql, params, context="Error obteniendo IDs sin estado de impresión")
+	df = _run_df(
+		conn,
+		sql,
+		params,
+		context="Error obteniendo IDs sin estado de impresión",
+		ttl=_ttl_for_mode(mode),
+	)
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []
@@ -358,7 +411,13 @@ def get_ids_comandas_anuladas(
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_ids_comandas_anuladas(view_name, where_sql, limit=limit)
-	df = _run_df(conn, sql, params, context="Error obteniendo IDs de comandas anuladas")
+	df = _run_df(
+		conn,
+		sql,
+		params,
+		context="Error obteniendo IDs de comandas anuladas",
+		ttl=_ttl_for_mode(mode),
+	)
 
 	if df is None or df.empty or "id_comanda" not in df.columns:
 		return []
@@ -383,7 +442,7 @@ def get_ventas_por_hora(
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_ventas_por_hora(view_name, where_sql, use_impresion_log=use_impresion_log)
-	return _run_df(conn, sql, params, context="Error ejecutando ventas por hora")
+	return _run_df(conn, sql, params, context="Error ejecutando ventas por hora", ttl=_ttl_for_mode(mode))
 
 
 def get_ventas_por_categoria(
@@ -398,7 +457,13 @@ def get_ventas_por_categoria(
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_por_categoria(view_name, where_sql, use_impresion_log=use_impresion_log)
-	return _run_df(conn, sql, params, context="Error ejecutando ventas por categoría")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando ventas por categoría",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_ventas_por_usuario(
@@ -414,7 +479,13 @@ def get_ventas_por_usuario(
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_por_usuario(view_name, where_sql, limit=limit, use_impresion_log=use_impresion_log)
-	return _run_df(conn, sql, params, context="Error ejecutando ventas por usuario")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando ventas por usuario",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_top_productos(
@@ -430,7 +501,13 @@ def get_top_productos(
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_top_productos(view_name, where_sql, limit=limit, use_impresion_log=use_impresion_log)
-	return _run_df(conn, sql, params, context="Error ejecutando top productos")
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando top productos",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def get_detalle(
@@ -445,13 +522,19 @@ def get_detalle(
 
 	where_sql, params = build_where(filters, mode)
 	sql = q_detalle(view_name, where_sql, limit=limit)
-	return _run_df(conn, sql, params, context="Error ejecutando detalle")
+	return _run_df(conn, sql, params, context="Error ejecutando detalle", ttl=_ttl_for_mode(mode))
 
 
-def get_impresion_snapshot(conn: Any, view_name: str, ids: list[int]):
+def get_impresion_snapshot(conn: Any, view_name: str, ids: list[int], *, mode: str = "none"):
 	"""Devuelve un snapshot de estados de impresión para depuración."""
 	sql = q_impresion_snapshot(view_name, ids)
-	return _run_df(conn, sql, {}, context="Error ejecutando snapshot de impresión")
+	return _run_df(
+		conn,
+		sql,
+		{},
+		context="Error ejecutando snapshot de impresión",
+		ttl=_ttl_for_mode(mode),
+	)
 
 
 def _median_minutes_between(series) -> tuple[float | None, int]:
@@ -501,6 +584,7 @@ def get_actividad_emision_comandas(
 	"""
 
 	where_sql, params = build_where(filters, mode)
+	ttl = _ttl_for_mode(mode)
 
 	# Últimas N comandas (ordenadas asc para poder hacer diff).
 	recent_df = _run_df(
@@ -508,6 +592,7 @@ def get_actividad_emision_comandas(
 		q_comandas_emision_times(view_name, where_sql, limit=int(recent_n)),
 		params,
 		context="Error obteniendo timestamps de emisión (últimas comandas)",
+		ttl=ttl,
 	)
 
 	# Todas las comandas del contexto (para ritmo global).
@@ -516,6 +601,7 @@ def get_actividad_emision_comandas(
 		q_comandas_emision_times(view_name, where_sql, limit=None),
 		params,
 		context="Error obteniendo timestamps de emisión (todas las comandas)",
+		ttl=ttl,
 	)
 
 	last_ts = None
@@ -549,11 +635,23 @@ def get_actividad_emision_comandas(
 	}
 
 
-def get_items_por_comanda(conn: Any, view_name: str, id_comanda: int) -> Any:
+def get_items_por_comanda(
+	conn: Any,
+	view_name: str,
+	id_comanda: int,
+	*,
+	mode: str = "none",
+) -> Any:
 	"""Obtiene los ítems consumidos de una comanda específica.
 
 	Útil para mostrar en expanders: productos, cantidades, precios, subtotales.
 	"""
 
 	sql = q_items_por_comanda(view_name, id_comanda)
-	return _run_df(conn, sql, {"id_comanda": id_comanda}, context=f"Error obteniendo ítems de comanda {id_comanda}")
+	return _run_df(
+		conn,
+		sql,
+		{"id_comanda": id_comanda},
+		context=f"Error obteniendo ítems de comanda {id_comanda}",
+		ttl=_ttl_for_mode(mode),
+	)

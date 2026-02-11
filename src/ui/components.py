@@ -183,6 +183,8 @@ def render_chart_section(
     empty_msg: str = "Sin datos para el rango seleccionado.",
     check_realtime_empty: bool = False,
     allow_csv_export: bool = True,
+    fallback_data: pd.DataFrame | None = None,
+    show_retry: bool = True,
 ) -> None:
     """Helper para renderizar secciones de gráficos con patrón unificado.
     
@@ -228,6 +230,17 @@ def render_chart_section(
                     key=f"csv_{title.lower().replace(' ', '_')}",
                 )
     except Exception as exc:
-        st.error(f"Error cargando {title.lower()}: {exc}")
-        if debug_fn:
-            debug_fn(exc)
+        st.warning(f"No se pudo cargar {title.lower()}.")
+        with st.expander("Ver detalles del error", expanded=False):
+            st.error(str(exc))
+            if debug_fn:
+                debug_fn(exc)
+        if show_retry:
+            if st.button(
+                f"Reintentar {title}",
+                key=f"retry_{title.lower().replace(' ', '_')}",
+            ):
+                st.rerun()
+        if fallback_data is not None and not fallback_data.empty:
+            st.caption("Mostrando datos en cache:")
+            st.dataframe(fallback_data, width="stretch")

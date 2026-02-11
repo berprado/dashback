@@ -17,6 +17,8 @@ def render_comanda_expander(
     conn: Any,
     row: dict[str, Any],
     view_name: str,
+    *,
+    mode: str = "none",
 ) -> None:
     """Renderiza un expander con detalles de una comanda específica.
 
@@ -79,7 +81,17 @@ def render_comanda_expander(
         # Ítems de la comanda
         st.subheader("Ítems Consumidos")
         try:
-            items_df = get_items_por_comanda(conn, view_name, id_comanda)
+            cargar_items = st.checkbox(
+                "Cargar ítems",
+                value=False,
+                key=f"items_load_{id_comanda}",
+                help="Ejecuta la consulta de ítems solo bajo demanda.",
+            )
+            if not cargar_items:
+                st.info("Activa 'Cargar ítems' para consultar el detalle.")
+                return
+
+            items_df = get_items_por_comanda(conn, view_name, id_comanda, mode=mode)
 
             if items_df is not None and not items_df.empty:
                 # Formatear DataFrame
@@ -132,6 +144,7 @@ def render_comanda_expanders_from_df(
     conn: Any,
     df: pd.DataFrame,
     view_name: str,
+    mode: str,
 ) -> None:
     """Renderiza expanders para cada comanda en un DataFrame.
 
@@ -146,4 +159,4 @@ def render_comanda_expanders_from_df(
         return
 
     for idx, row in df.iterrows():
-        render_comanda_expander(conn, row, view_name)
+        render_comanda_expander(conn, row, view_name, mode=mode)

@@ -13,20 +13,26 @@ import pandas as pd
 Q_HEALTHCHECK = """
 SELECT
     req.object_name,
+    req.category,
     CASE WHEN t.TABLE_NAME IS NULL THEN 0 ELSE 1 END AS exists_in_db,
     t.TABLE_TYPE AS object_type,
     DATABASE() AS database_name
 FROM (
-    SELECT 'comandas_v6' AS object_name
-    UNION ALL SELECT 'comandas_v6_todas'
-    UNION ALL SELECT 'comandas_v6_base'
-    UNION ALL SELECT 'comandas_v7'
-    UNION ALL SELECT 'vw_comanda_ultima_impresion'
-    UNION ALL SELECT 'bar_comanda_impresion'
+    SELECT 'comandas_v6' AS object_name, 'core' AS category
+    UNION ALL SELECT 'comandas_v6_todas', 'core'
+    UNION ALL SELECT 'comandas_v6_base', 'core'
+    UNION ALL SELECT 'comandas_v7', 'diagnostico'
+    UNION ALL SELECT 'vw_comanda_ultima_impresion', 'diagnostico'
+    UNION ALL SELECT 'bar_comanda_impresion', 'diagnostico'
+    UNION ALL SELECT 'vw_margen_comanda', 'pnl'
+    UNION ALL SELECT 'vw_consumo_valorizado_operativa', 'pnl'
+    UNION ALL SELECT 'vw_consumo_insumos_operativa', 'pnl'
+    UNION ALL SELECT 'vw_cogs_comanda', 'pnl'
 ) req
 LEFT JOIN information_schema.TABLES t
     ON t.TABLE_SCHEMA = DATABASE()
- AND t.TABLE_NAME = req.object_name;
+ AND t.TABLE_NAME = req.object_name
+ORDER BY req.category, req.object_name;
 """
 
 # Startup / modo operativo (ver docs/01-flujo_inicio_dashboard.md)
@@ -182,13 +188,8 @@ def q_kpis(view_name: str, where_sql: str) -> str:
     cond_venta = _cond_venta_final("v")
     cond_cortesia = _cond_cortesia_final("v")
 
-    # Variante "efectiva" para ventas finalizadas, usando el log (vw_comanda_ultima_impresion)
-    # como señal alternativa cuando bar_comanda.estado_impresion está NULL.
-    cond_venta_impreso_log = (
-        "UPPER(COALESCE(v.tipo_salida, '')) = 'VENTA' "
-        "AND v.estado_comanda = 'PROCESADO' "
-        "AND (v.estado_impresion = 'IMPRESO' OR ei_log.nombre = 'IMPRESO')"
-    )
+    # Variante "efectiva" para ventas finalizadas, usando el log como señal alternativa.
+    cond_venta_impreso_log = _cond_venta_final_impreso_log()
 
     return f"""
     SELECT
@@ -257,12 +258,7 @@ def q_kpis(view_name: str, where_sql: str) -> str:
                 0
             ) AS items_cortesia
     FROM {view_name} v
-    LEFT JOIN vw_comanda_ultima_impresion imp
-        ON imp.id_comanda = v.id_comanda
-    LEFT JOIN parameter_table ei_log
-        ON ei_log.id = imp.ind_estado_impresion
-       AND ei_log.id_master = 10
-       AND ei_log.estado = 'HAB'
+    {_join_impresion_log(table_alias="v")}
     {where_sql};
     """
 
@@ -282,6 +278,19 @@ def _cond_venta_final_impreso_log() -> str:
         "AND v.estado_comanda = 'PROCESADO' "
         "AND (v.estado_impresion = 'IMPRESO' OR ei_log.nombre = 'IMPRESO')"
     )
+
+
+def _join_impresion_log(*, table_alias: str = "v") -> str:
+    """JOIN al log de impresión para señal alternativa de IMPRESO."""
+
+    return f"""
+    LEFT JOIN vw_comanda_ultima_impresion imp
+        ON imp.id_comanda = {table_alias}.id_comanda
+    LEFT JOIN parameter_table ei_log
+        ON ei_log.id = imp.ind_estado_impresion
+       AND ei_log.id_master = 10
+       AND ei_log.estado = 'HAB'
+    """
 
 
 def q_estado_operativo(view_name: str, where_sql: str) -> str:
@@ -383,16 +392,7 @@ def q_ventas_por_hora(view_name: str, where_sql: str, *, use_impresion_log: bool
     cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
     where2 = _append_condition(where_sql, cond)
 
-    join_sql = ""
-    if use_impresion_log:
-        join_sql = """
-        LEFT JOIN vw_comanda_ultima_impresion imp
-            ON imp.id_comanda = v.id_comanda
-        LEFT JOIN parameter_table ei_log
-            ON ei_log.id = imp.ind_estado_impresion
-           AND ei_log.id_master = 10
-           AND ei_log.estado = 'HAB'
-        """
+    join_sql = _join_impresion_log(table_alias="v") if use_impresion_log else ""
 
     return f"""
         SELECT
@@ -412,16 +412,7 @@ def q_por_categoria(view_name: str, where_sql: str, *, use_impresion_log: bool =
     cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
     where2 = _append_condition(where_sql, cond)
 
-    join_sql = ""
-    if use_impresion_log:
-        join_sql = """
-        LEFT JOIN vw_comanda_ultima_impresion imp
-            ON imp.id_comanda = v.id_comanda
-        LEFT JOIN parameter_table ei_log
-            ON ei_log.id = imp.ind_estado_impresion
-           AND ei_log.id_master = 10
-           AND ei_log.estado = 'HAB'
-        """
+    join_sql = _join_impresion_log(table_alias="v") if use_impresion_log else ""
 
     return f"""
         SELECT
@@ -447,16 +438,7 @@ def q_top_productos(
     cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
     where2 = _append_condition(where_sql, cond)
 
-    join_sql = ""
-    if use_impresion_log:
-        join_sql = """
-        LEFT JOIN vw_comanda_ultima_impresion imp
-            ON imp.id_comanda = v.id_comanda
-        LEFT JOIN parameter_table ei_log
-            ON ei_log.id = imp.ind_estado_impresion
-           AND ei_log.id_master = 10
-           AND ei_log.estado = 'HAB'
-        """
+    join_sql = _join_impresion_log(table_alias="v") if use_impresion_log else ""
 
     return f"""
         SELECT
@@ -477,16 +459,7 @@ def q_por_usuario(view_name: str, where_sql: str, limit: int = 20, *, use_impres
     cond = _cond_venta_final("v") if not use_impresion_log else _cond_venta_final_impreso_log()
     where2 = _append_condition(where_sql, cond)
 
-    join_sql = ""
-    if use_impresion_log:
-        join_sql = """
-        LEFT JOIN vw_comanda_ultima_impresion imp
-            ON imp.id_comanda = v.id_comanda
-        LEFT JOIN parameter_table ei_log
-            ON ei_log.id = imp.ind_estado_impresion
-           AND ei_log.id_master = 10
-           AND ei_log.estado = 'HAB'
-        """
+    join_sql = _join_impresion_log(table_alias="v") if use_impresion_log else ""
 
     return f"""
         SELECT
@@ -630,7 +603,13 @@ def q_impresion_snapshot(view_name: str, ids: list[int]) -> str:
     """
 
 
-def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None) -> pd.DataFrame:
+def fetch_dataframe(
+    conn: Any,
+    query: str,
+    params: dict[str, Any] | None = None,
+    *,
+    ttl: int | None = None,
+) -> pd.DataFrame:
     """Ejecuta un SELECT y devuelve el resultado como DataFrame.
 
     Soporta:
@@ -640,7 +619,9 @@ def fetch_dataframe(conn: Any, query: str, params: dict[str, Any] | None = None)
 
     if hasattr(conn, "query"):
         try:
-            return conn.query(query, params=params or {}, ttl=0)
+            if ttl is None:
+                return conn.query(query, params=params or {})
+            return conn.query(query, params=params or {}, ttl=ttl)
         except TypeError:
             return conn.query(query, params=params or {})
 
