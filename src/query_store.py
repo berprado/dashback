@@ -682,6 +682,7 @@ def q_wac_cogs_detalle(view_name: str, where_sql: str, *, limit: int) -> str:
         v.id_comanda,
         bc.id_mesa,
         bc.usuario_reg,
+        bc.fecha AS fecha_emision,
         bc.estado_comanda,
         v.id_barra,
         v.total_venta,
@@ -758,6 +759,7 @@ def q_cogs_por_comanda(view_name: str, where_sql: str, *, limit: int) -> str:
         v.id_comanda,
         bc.id_mesa,
         bc.usuario_reg,
+        bc.fecha AS fecha_emision,
         bc.estado_comanda,
         v.id_barra,
         v.cogs_comanda

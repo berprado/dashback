@@ -266,6 +266,9 @@ Para evitar diagnósticos “a ciegas” cuando el KPI de ventas queda subestima
 
 - Se evitó polling/auto-refresh continuo; se dejó un refresco manual en modo tiempo real.
 - Se cargan recursos pesados (detalle e IDs) solo bajo demanda.
+- Se incorporó cache por modo (realtime sin cache, histórico con cache corto).
+- Se agregó fallback por sesión en gráficos para degradación graceful si falla la BD.
+- Se aplicó `@st.fragment` en KPIs, márgenes, gráficos y detalle para reducir reruns completos.
 
 Mejora visual:
 - Se añadieron contornos con colores diferenciados por grupo de métricas (KPIs / diagnóstico de impresión / estado operativo) para mejorar lectura rápida.
@@ -299,6 +302,10 @@ El dashboard hoy permite:
 - Consultar KPIs, cortesías, estado operativo, gráficos y detalle bajo demanda.
 - Consultar actividad (última comanda / minutos desde última / ritmo de emisión).
 - Validar conexión y vistas desde el healthcheck.
+- `app.py` modularizado en `src/ui/sections/` para aislar secciones de UI.
+- Conexión cacheada por sesión (`scope="session"`) con `on_release` y validación opcional.
+- JOIN de impresión centralizado en helper para evitar duplicación.
+- Healthcheck extendido con vistas P&L.
 
 Actualización (documentación):
 - Se ajustó docs/02 para alinear explícitamente qué está implementado hoy (Filters/build_where) y aclarar que el toggle de impresión usa el log (`vw_comanda_ultima_impresion`) vía joins (no consume `comandas_v7`).

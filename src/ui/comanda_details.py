@@ -19,6 +19,7 @@ def render_comanda_expander(
     view_name: str,
     *,
     mode: str = "none",
+    key_suffix: str | None = None,
 ) -> None:
     """Renderiza un expander con detalles de una comanda específica.
 
@@ -32,14 +33,20 @@ def render_comanda_expander(
     id_mesa = row.get("id_mesa", "N/A")
     usuario = row.get("usuario_reg", "N/A")
     estado = row.get("estado_comanda", "N/A")
+    fecha_emision = row.get("fecha_emision")
     total_venta = row.get("total_venta")
     cogs = row.get("cogs_comanda")
     margen = row.get("margen_comanda")
 
     # Encabezado del expander
     header = f"📋 Comanda {id_comanda}"
-    if id_mesa:
-        header += f" | Mesa {id_mesa}"
+    if fecha_emision:
+        try:
+            ts = pd.to_datetime(fecha_emision, errors="coerce")
+            if pd.notna(ts):
+                header += f" | {ts.strftime('%Y-%m-%d %H:%M')}"
+        except Exception:
+            pass
     if usuario:
         header += f" | {usuario}"
 
@@ -81,10 +88,13 @@ def render_comanda_expander(
         # Ítems de la comanda
         st.subheader("Ítems Consumidos")
         try:
+            key = f"items_load_{id_comanda}"
+            if key_suffix:
+                key = f"{key}_{key_suffix}"
             cargar_items = st.checkbox(
                 "Cargar ítems",
                 value=False,
-                key=f"items_load_{id_comanda}",
+                key=key,
                 help="Ejecuta la consulta de ítems solo bajo demanda.",
             )
             if not cargar_items:
@@ -159,4 +169,4 @@ def render_comanda_expanders_from_df(
         return
 
     for idx, row in df.iterrows():
-        render_comanda_expander(conn, row, view_name, mode=mode)
+        render_comanda_expander(conn, row, view_name, mode=mode, key_suffix=str(idx))

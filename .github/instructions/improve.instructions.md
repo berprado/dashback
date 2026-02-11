@@ -14,6 +14,25 @@ Sin embargo, se identificaron **6 red flags** que afectan mantenibilidad, rendim
 
 ---
 
+## Estado actual (2026-02-11)
+
+Implementado en el proyecto:
+- Red Flag #1: JOIN de impresión extraído a helper.
+- Red Flag #2: TTL por modo (realtime sin cache, histórico con cache corto).
+- Red Flag #3: Healthcheck extendido con vistas P&L.
+- Red Flag #4: `app.py` modularizado en `src/ui/sections/`.
+- Red Flag #5: Manejo granular de errores en gráficos con retry y fallback por sesión.
+- Red Flag #6: Conexión cacheada por sesión con `on_release` + validación opcional.
+- Lazy loading real en ítems de comandas.
+- `@st.fragment` aplicado a KPIs, márgenes, gráficos y detalle.
+
+Pendiente / opcional:
+- Theming de charts en `.streamlit/config.toml` (`chartCategoricalColors`, `chartDivergingColors`).
+- Fallback cache para KPIs/márgenes (solo implementado en gráficos).
+- Ajustes de pool/conexión según métricas reales de carga.
+
+---
+
 ## 🔴 Red Flag #1: Duplicación de JOINs al Log de Impresión
 
 ### Problema

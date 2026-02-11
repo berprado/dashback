@@ -572,6 +572,20 @@ def get_conn():
 
 ---
 
+## Aplicación en Dashback (2026-02-11)
+
+Implementado:
+- TTL por modo en consultas (realtime sin cache, histórico con cache corto).
+- Conexión cacheada por sesión con `on_release` y validación opcional.
+- `@st.fragment` aplicado a secciones de KPIs, márgenes, gráficos y detalle.
+- Fallback por sesión en gráficos (último DataFrame exitoso).
+
+Pendiente / opcional:
+- Theming de charts en `.streamlit/config.toml`.
+- Fallback en KPIs/márgenes si se requiere degradación similar a gráficos.
+
+---
+
 ## Referencias
 
 - [Documentación oficial: Caching](https://docs.streamlit.io/develop/concepts/architecture/caching)
