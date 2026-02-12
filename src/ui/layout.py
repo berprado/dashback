@@ -13,7 +13,6 @@ def render_page_header() -> None:
 def render_sidebar_connection_section() -> tuple[bool, str]:
     with st.sidebar:
         st.header(":material/lan: Conexión")
-        st.write("Configura `.streamlit/secrets.toml` (o `.streamlit/secrets.toml.example`).")
 
         connection_options: list[tuple[str, str]] = [("Local", "mysql")]
         try:
