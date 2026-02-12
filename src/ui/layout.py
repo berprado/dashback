@@ -57,9 +57,9 @@ def render_filter_context_badge(
     # Contexto de filtro
     if mode == "ops" and filters.op_ini and filters.op_fin:
         if filters.op_ini == filters.op_fin:
-            parts.append(f":material/receipt_long: Op. {filters.op_ini}")
+            parts.append(f":material/insights: Op. {filters.op_ini}")
         else:
-            parts.append(f":material/receipt_long: Op. {filters.op_ini}-{filters.op_fin}")
+            parts.append(f":material/insights: Op. {filters.op_ini}-{filters.op_fin}")
     elif mode == "dates" and filters.dt_ini and filters.dt_fin:
         dt_ini_short = filters.dt_ini[:10] if len(filters.dt_ini) >= 10 else filters.dt_ini
         dt_fin_short = filters.dt_fin[:10] if len(filters.dt_fin) >= 10 else filters.dt_fin
@@ -73,9 +73,7 @@ def render_filter_context_badge(
     
     if parts:
         badge_text = " • ".join(parts)
-        st.markdown(
-            f'<div style="background-color: #0F172A; color: #E5E7EB; padding: 8px 12px; border: 1px solid #1F2937; '
-            f'border-radius: 4px; margin-bottom: 12px; font-size: 14px; '
-            f'text-align: center;">{badge_text}</div>',
-            unsafe_allow_html=True,
-        )
+        # Usamos st.markdown estándar para asegurar que los iconos Material Symbols se rendericen.
+        # Envolvemos en un contenedor con borde para darle presencia visual similar a un badge.
+        with st.container(border=True):
+            st.markdown(badge_text, help="Contexto de filtros aplicado actualmente.")
