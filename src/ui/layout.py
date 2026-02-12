@@ -58,9 +58,9 @@ def render_filter_context_badge(
     # Contexto de filtro
     if mode == "ops" and filters.op_ini and filters.op_fin:
         if filters.op_ini == filters.op_fin:
-            parts.append(f":material/description: Op. {filters.op_ini}")
+            parts.append(f":material/receipt_long: Op. {filters.op_ini}")
         else:
-            parts.append(f":material/description: Op. {filters.op_ini}-{filters.op_fin}")
+            parts.append(f":material/receipt_long: Op. {filters.op_ini}-{filters.op_fin}")
     elif mode == "dates" and filters.dt_ini and filters.dt_fin:
         dt_ini_short = filters.dt_ini[:10] if len(filters.dt_ini) >= 10 else filters.dt_ini
         dt_fin_short = filters.dt_fin[:10] if len(filters.dt_fin) >= 10 else filters.dt_fin
@@ -70,7 +70,7 @@ def render_filter_context_badge(
     
     # Estado del toggle de impresión
     if use_impresion_log:
-        parts.append(":material/local_shipping: Log impresión: ON")
+        parts.append(":material/print: Log impresión: ON")
     
     if parts:
         badge_text = " • ".join(parts)
