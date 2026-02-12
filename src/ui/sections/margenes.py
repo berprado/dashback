@@ -85,21 +85,16 @@ def render_margenes_section(
             ),
             border=True,
         )
-        status_color = "#22c55e" if 18 <= pour_cost_pct <= 24 else ("#eab308" if 16 <= pour_cost_pct < 18 or 24 < pour_cost_pct <= 28 else "#ef4444")
-        status_bg = "rgba(34,197,94,0.08)" if 18 <= pour_cost_pct <= 24 else ("rgba(234,179,8,0.08)" if 16 <= pour_cost_pct < 18 or 24 < pour_cost_pct <= 28 else "rgba(239,68,68,0.08)")
         with m5:
-            st.markdown(
-                f"""
-<div style="border: 1px solid {status_color}; background: {status_bg}; border-radius: 12px; padding: 12px;">
-  <div style="font-size: 0.85rem; color: #9CA3AF;">Pour Cost %</div>
-  <div style="font-size: 1.6rem; font-weight: 600;">{pour_cost_pct:.2f} %</div>
-  <div style="font-size: 0.72rem; color: #9CA3AF;">
-    Umbrales: verde 18–24%, amarillo 16–18% o 24–28%, rojo &lt;16% o &gt;28%.
-  </div>
-</div>
-""",
-                unsafe_allow_html=True,
-            )
+            # Lógica de umbrales: 18-24 (Verde), 16-18/24-28 (Amarillo), Resto (Rojo)
+            pc_info = "**Pour Cost %**\n\n" f"# {pour_cost_pct:.2f} %\n\n" "Verde: 18–24%, Amarillo: 16–18% / 24–28%."
+            
+            if 18 <= pour_cost_pct <= 24:
+                st.success(pc_info, icon=":material/check_circle:")
+            elif (16 <= pour_cost_pct < 18) or (24 < pour_cost_pct <= 28):
+                st.warning(pc_info, icon=":material/warning:")
+            else:
+                st.error(pc_info, icon=":material/error:")
 
 
         st.markdown("</div>", unsafe_allow_html=True)
