@@ -98,9 +98,18 @@ def format_df_money_columns(df: pd.DataFrame, money_columns: list[str], *, decim
 
 
 def format_detalle_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Formatea el DataFrame de detalle para visualización en Streamlit."""
+    """Formatea el DataFrame de detalle para visualizaci?n en Streamlit."""
 
-    return format_df_money_columns(df, ["precio_venta", "sub_total"], decimals=2)
+    if df is None or df.empty:
+        return df
+
+    out = df.copy()
+    if "fecha_emision" in out.columns:
+        ts = pd.to_datetime(out["fecha_emision"], errors="coerce")
+        out["fecha_emision"] = ts.dt.strftime("%y-%m-%d %H:%M")
+
+    out = format_df_money_columns(out, ["precio_venta", "sub_total"], decimals=2)
+    return out
 
 
 def format_margen_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -113,7 +122,11 @@ def format_margen_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     out = df.copy()
-    
+
+    if "fecha_emision" in out.columns:
+        ts = pd.to_datetime(out["fecha_emision"], errors="coerce")
+        out["fecha_emision"] = ts.dt.strftime("%y-%m-%d %H:%M")
+
     # Formatear monetarios con 2 decimales
     out = format_df_money_columns(out, ["total_venta", "cogs_comanda", "margen_comanda"], decimals=2)
     
@@ -123,6 +136,7 @@ def format_margen_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
         "id_comanda",
         "id_mesa",
         "usuario_reg",
+        "fecha_emision",
         "estado_comanda",
         "id_barra",
         "total_venta",
@@ -221,7 +235,11 @@ def format_cogs_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     out = df.copy()
-    
+
+    if "fecha_emision" in out.columns:
+        ts = pd.to_datetime(out["fecha_emision"], errors="coerce")
+        out["fecha_emision"] = ts.dt.strftime("%y-%m-%d %H:%M")
+
     # Formatear monetarios con 2 decimales
     out = format_df_money_columns(out, ["cogs_comanda"], decimals=2)
     
@@ -231,6 +249,7 @@ def format_cogs_comanda_df(df: pd.DataFrame) -> pd.DataFrame:
         "id_comanda",
         "id_mesa",
         "usuario_reg",
+        "fecha_emision",
         "estado_comanda",
         "id_barra",
         "cogs_comanda",

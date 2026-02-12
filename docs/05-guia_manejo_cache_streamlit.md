@@ -583,6 +583,8 @@ Implementado:
 
 Pendiente / opcional:
 - Fallback en KPIs/márgenes si se requiere degradación similar a gráficos.
+- Auto-refresh controlado (toggle + intervalo).
+- Pool/DSN tuning (pool_size, pool_recycle, timeouts).
 
 ---
 

@@ -94,6 +94,7 @@ Se incorporó el bloque ejecutivo de P&L con fuente en `vw_margen_comanda`:
 - COGS (suma `cogs_comanda`)
 - Margen bruto (suma `margen_comanda`)
 - Margen % (margen / ventas)
+- Pour Cost % (cogs / ventas)
 
 Este bloque respeta el contexto actual (operativas o fechas) y sirve como validación rápida contra `ope_conciliacion`.
 
@@ -325,4 +326,6 @@ Actualización (repo / calidad):
 - Cache con TTL por bloque para reducir carga en producción.
 - Autenticación/roles si el dashboard se expone fuera de red interna.
 - Más KPIs operativos: anuladas, procesadas, comparativos por hora/turno.
+- Auto-refresh controlado (toggle + intervalo).
+- Pool/DSN tuning (pool_size, pool_recycle, timeouts).
 

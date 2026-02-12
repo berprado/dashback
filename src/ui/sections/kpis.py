@@ -23,8 +23,10 @@ def render_kpis_section(
         st.info("Conecta a la base de datos para ver KPIs.")
         return
 
+    using_fallback = False
     try:
         kpis = get_kpis(conn, startup.view_name, filters, mode_for_metrics)
+        st.session_state["kpis_fallback"] = dict(kpis)
 
         st.markdown('<div class="metric-scope metric-kpis">', unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns(4)
@@ -233,5 +235,14 @@ def render_kpis_section(
 
         st.markdown("</div>", unsafe_allow_html=True)
     except Exception as exc:
-        st.error(f"Error calculando KPIs: {exc}")
+        st.warning("No se pudieron calcular los KPIs. Mostrando datos en cache.")
+        kpis = st.session_state.get("kpis_fallback")
+        if not kpis:
+            st.error(f"Error calculando KPIs: {exc}")
+            debug_fn(exc)
+            return
+        using_fallback = True
         debug_fn(exc)
+
+    if using_fallback:
+        st.caption("Mostrando datos en cache (último cálculo exitoso).")

@@ -152,11 +152,15 @@ def get_wac_cogs_summary(
 		}
 
 	row = df.iloc[0].to_dict()
+	total_ventas = _to_float(row.get("total_ventas"))
+	total_cogs = _to_float(row.get("total_cogs"))
+	pour_cost_pct = (total_cogs / total_ventas * 100.0) if total_ventas > 0 else 0.0
 	return {
-		"total_ventas": _to_float(row.get("total_ventas")),
-		"total_cogs": _to_float(row.get("total_cogs")),
+		"total_ventas": total_ventas,
+		"total_cogs": total_cogs,
 		"total_margen": _to_float(row.get("total_margen")),
 		"margen_pct": _to_float(row.get("margen_pct")),
+		"pour_cost_pct": pour_cost_pct,
 	}
 
 
@@ -527,6 +531,8 @@ def get_detalle(
 
 def get_impresion_snapshot(conn: Any, view_name: str, ids: list[int], *, mode: str = "none"):
 	"""Devuelve un snapshot de estados de impresión para depuración."""
+	if not ids:
+		return pd.DataFrame()
 	sql = q_impresion_snapshot(view_name, ids)
 	return _run_df(
 		conn,

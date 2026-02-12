@@ -29,6 +29,8 @@ Implementado en el proyecto:
 
 Pendiente / opcional:
 - Fallback cache para KPIs/márgenes (solo implementado en gráficos).
+- Auto-refresh controlado (toggle + intervalo).
+- Pool/DSN tuning (pool_size, pool_recycle, timeouts).
 - Ajustes de pool/conexión según métricas reales de carga.
 
 ---

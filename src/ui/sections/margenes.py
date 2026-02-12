@@ -35,16 +35,19 @@ def render_margenes_section(
         st.info("Conecta a la base de datos para ver márgenes.")
         return
 
+    using_fallback = False
     try:
         wac_cogs = get_wac_cogs_summary(conn, "vw_margen_comanda", filters, mode_for_metrics)
+        st.session_state["margenes_fallback"] = dict(wac_cogs)
 
         st.markdown('<div class="metric-scope metric-kpis">', unsafe_allow_html=True)
-        m1, m2, m3, m4 = st.columns(4)
+        m1, m2, m3, m4, m5 = st.columns(5)
 
         total_ventas = float(wac_cogs.get("total_ventas") or 0)
         total_cogs = float(wac_cogs.get("total_cogs") or 0)
         total_margen = float(wac_cogs.get("total_margen") or 0)
         margen_pct = float(wac_cogs.get("margen_pct") or 0)
+        pour_cost_pct = float(wac_cogs.get("pour_cost_pct") or 0)
 
         m1.metric(
             "Ventas brutas",
@@ -82,6 +85,22 @@ def render_margenes_section(
             ),
             border=True,
         )
+        status_color = "#22c55e" if 18 <= pour_cost_pct <= 24 else ("#eab308" if 16 <= pour_cost_pct < 18 or 24 < pour_cost_pct <= 28 else "#ef4444")
+        status_bg = "rgba(34,197,94,0.08)" if 18 <= pour_cost_pct <= 24 else ("rgba(234,179,8,0.08)" if 16 <= pour_cost_pct < 18 or 24 < pour_cost_pct <= 28 else "rgba(239,68,68,0.08)")
+        with m5:
+            st.markdown(
+                f"""
+<div style="border: 1px solid {status_color}; background: {status_bg}; border-radius: 12px; padding: 12px;">
+  <div style="font-size: 0.85rem; color: #9CA3AF;">Pour Cost %</div>
+  <div style="font-size: 1.6rem; font-weight: 600;">{pour_cost_pct:.2f} %</div>
+  <div style="font-size: 0.72rem; color: #9CA3AF;">
+    Umbrales: verde 18–24%, amarillo 16–18% o 24–28%, rojo &lt;16% o &gt;28%.
+  </div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -240,5 +259,14 @@ def render_margenes_section(
                     st.subheader("Detalles de Comandas")
                     render_comanda_expanders_from_df(conn, cogs_df, startup.view_name, mode_for_metrics)
     except Exception as exc:
-        st.error(f"Error calculando P&L: {exc}")
+        st.warning("No se pudo calcular P&L. Mostrando datos en cache.")
+        wac_cogs = st.session_state.get("margenes_fallback")
+        if not wac_cogs:
+            st.error(f"Error calculando P&L: {exc}")
+            debug_fn(exc)
+            return
+        using_fallback = True
         debug_fn(exc)
+
+    if using_fallback:
+        st.caption("Mostrando datos en cache (último cálculo exitoso).")

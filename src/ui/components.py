@@ -226,7 +226,7 @@ def render_chart_section(
             if allow_csv_export:
                 csv_data = df.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    label="⬇️ Descargar CSV",
+                    label=":material/download: Descargar CSV",
                     data=csv_data,
                     file_name=f"{title.lower().replace(' ', '_')}.csv",
                     mime="text/csv",
@@ -247,5 +247,5 @@ def render_chart_section(
         if fallback_data is None and fallback_key:
             fallback_data = st.session_state.get(f"chart_fallback_{fallback_key}")
         if fallback_data is not None and not fallback_data.empty:
-            st.caption("Mostrando datos en cache:")
+            st.caption("Mostrando datos en cache (último cálculo exitoso).")
             st.dataframe(fallback_data, width="stretch")
