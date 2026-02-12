@@ -61,9 +61,9 @@ def determine_startup_context(conn: Any | None = None) -> StartupContext:
         operacion_id = active.get("id_operacion")
 
         message = (
-            "🟢 Operativa activa — esperando primeras comandas."
+            ":material/check_circle: Operativa activa — esperando primeras comandas."
             if not has_rows
-            else f"🟢 Operativa #{operacion_id} — {estado_operacion or 'ACTIVA'}"
+            else f":material/check_circle: Operativa #{operacion_id} — {estado_operacion or 'ACTIVA'}"
         )
 
         return StartupContext(
@@ -84,9 +84,9 @@ def determine_startup_context(conn: Any | None = None) -> StartupContext:
     estado_operacion = closed.get("estado_operacion") if closed else None
 
     message = (
-        "📚 No hay operativa activa — mostrando histórico."
+        ":material/history: No hay operativa activa — mostrando histórico."
         if operacion_id is not None
-        else "📚 No hay operativa activa ni operativas cerradas — seleccione un rango para ver histórico."
+        else ":material/history: No hay operativa activa ni operativas cerradas — seleccione un rango para ver histórico."
     )
 
     return StartupContext(

@@ -73,7 +73,7 @@ with st.sidebar:
     )
     
     st.divider()
-    st.header(":material/insights: Gráficos")
+    st.header(":material/bar_chart: Gráficos")
     limit_top_productos = st.number_input(
         "Límite top productos",
         min_value=5,

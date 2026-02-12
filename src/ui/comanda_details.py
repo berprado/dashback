@@ -39,7 +39,7 @@ def render_comanda_expander(
     margen = row.get("margen_comanda")
 
     # Encabezado del expander
-    header = f"📋 Comanda {id_comanda}"
+    header = f":material/clipboard: Comanda {id_comanda}"
     if fecha_emision:
         try:
             ts = pd.to_datetime(fecha_emision, errors="coerce")
