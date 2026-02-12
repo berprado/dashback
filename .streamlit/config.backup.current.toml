@@ -1,16 +1,14 @@
 [theme]
 base="dark"
-# Brand subtle preset (2026-02-12)
-# Quick rollback: copy `.streamlit/config.backup.current.toml` -> `.streamlit/config.toml`
-primaryColor="#d50075"
+primaryColor="#F97316"
 backgroundColor="#0B0F14"
 secondaryBackgroundColor="#121826"
 textColor="#E6EAF0"
-linkColor="#47db95"
+linkColor="#7DD3FC"
 linkUnderline=false
-borderColor="#2B3044"
-dataframeBorderColor="#2D3550"
-dataframeHeaderBackgroundColor="#1A2033"
+borderColor="#263040"
+dataframeBorderColor="#2A364A"
+dataframeHeaderBackgroundColor="#182133"
 baseRadius="10px"
 buttonRadius="8px"
 baseFontSize=14
@@ -22,12 +20,12 @@ codeFontSize="0.85rem"
 codeFontWeight=400
 headingFontSizes=["2.1rem","1.7rem","1.35rem","1.1rem","1rem","0.9rem"]
 headingFontWeights=[700,600,600,600,600,600]
-chartCategoricalColors=["#d50075","#47db95","#60A5FA","#A78BFA","#22D3EE","#FBBF24","#F43F5E","#94A3B8"]
+chartCategoricalColors=["#F97316","#22D3EE","#A78BFA","#34D399","#F43F5E","#FBBF24","#60A5FA","#10B981"]
 chartSequentialColors=["#0B1220","#0E1625","#111C2B","#142131","#172637","#1B2C3E","#1F3245","#24384D","#293F55","#2E465D"]
 
 [theme.sidebar]
 backgroundColor="#0F141B"
 secondaryBackgroundColor="#121826"
 textColor="#D7DCE3"
-borderColor="#2B3044"
-linkColor="#47db95"
+borderColor="#1F2937"
+linkColor="#7DD3FC"

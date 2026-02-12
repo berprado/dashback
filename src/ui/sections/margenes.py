@@ -86,12 +86,12 @@ def render_margenes_section(
             border=True,
         )
         with m5:
-            # Lógica de umbrales: 18-24 (Verde), 16-18/24-28 (Amarillo), Resto (Rojo)
-            pc_info = "**Pour Cost %**\n\n" f"# {pour_cost_pct:.2f} %\n\n" "Verde: 18–24%, Amarillo: 16–18% / 24–28%."
+            # Lógica de umbrales: 30-40 (Verde), 25-30/40-45 (Amarillo), Resto (Rojo)
+            pc_info = "**Pour Cost %**\n\n" f"# {pour_cost_pct:.2f} %"
             
-            if 18 <= pour_cost_pct <= 24:
+            if 30 <= pour_cost_pct <= 40:
                 st.success(pc_info, icon=":material/check_circle:")
-            elif (16 <= pour_cost_pct < 18) or (24 < pour_cost_pct <= 28):
+            elif (25 <= pour_cost_pct < 30) or (40 < pour_cost_pct <= 45):
                 st.warning(pc_info, icon=":material/warning:")
             else:
                 st.error(pc_info, icon=":material/error:")
