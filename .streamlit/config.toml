@@ -21,7 +21,7 @@ codeFontWeight=400
 headingFontSizes=["2.1rem","1.7rem","1.35rem","1.1rem","1rem","0.9rem"]
 headingFontWeights=[700,600,600,600,600,600]
 chartCategoricalColors=["#F97316","#22D3EE","#A78BFA","#34D399","#F43F5E","#FBBF24","#60A5FA","#10B981"]
-chartSequentialColors=["#0B1220","#0F1A2B","#132339","#1C2F4C","#273A5D","#334870","#3F5685"]
+chartSequentialColors=["#0B1220","#0E1625","#111C2B","#142131","#172637","#1B2C3E","#1F3245","#24384D","#293F55","#2E465D"]
 
 [theme.sidebar]
 backgroundColor="#0F141B"
