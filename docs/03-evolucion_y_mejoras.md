@@ -318,7 +318,28 @@ Actualización (repo / calidad):
 
 ---
 
-## 12) Próximas ideas (no implementadas aún)
+## 12) Mejoras en Visualizaciones (Gráficos Combinados)
+
+Se evolucionó la estrategia de graficado para mejorar la densidad de información sin perder claridad:
+
+### 12.1 Estrategia "Combo Chart"
+Se implementó composición de gráficos (Barras + Líneas) con doble eje Y usando `plotly.subplots`:
+
+- **Ventas por Hora**:
+  - **Barras**: Monto vendido (Bs).
+  - **Línea**: Cantidad de Comandas (#).
+  - **Mejora de datos**: Se normalizó el eje temporal (0-23h) rellenando con ceros los huecos sin ventas. Esto permite visualizar correctamente los "baches" operativos que antes quedaban ocultos por la interpolación lineal.
+
+- **Ventas por Categoría**:
+  - **Barras**: Monto vendido (Bs).
+  - **Línea**: Cantidad de Unidades (Shape *spline* para suavidad visual).
+  - Permite correlacionar categorías de volumen (muchas unidades, ticket bajo) vs valor (pocas unidades, ticket alto).
+
+**Beneficio**: El usuario obtiene contexto operativo (pulso de comandas / volumen de unidades) en el mismo espacio visual, facilitando decisiones rápidas.
+
+---
+
+## 13) Próximas ideas (no implementadas aún)
 
 - Prefacturación (facturado vs no facturado).
 - Exportación de detalle (CSV/Excel) bajo demanda.

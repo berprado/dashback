@@ -102,8 +102,8 @@ Capturas:
    - Impresión pendiente: `estado_comanda<>'ANULADO' AND estado_impresion='PENDIENTE'`.
    - Sin estado impresión: `estado_comanda<>'ANULADO' AND estado_impresion IS NULL`.
 - **Gráficos (2 columnas)**: 
-   - **Ventas por hora** (línea con marcadores): tendencia temporal con comandas/ítems en tooltip. Opción de línea de promedio.
-   - **Ventas por categoría** (barras o torta): distribución con unidades/comandas en tooltip. Toggle barras/pie chart.
+   - **Ventas por hora** (Combo Chart): Barras de **ventas** vs Línea de **comandas**. Visualiza "baches" operativos (0-23h) y pulso de actividad. Opción de línea de promedio.
+   - **Ventas por categoría** (Combo Chart o Torta): Barras de **ventas** vs Línea curva de **unidades**. Toggle barras combinadas/torta.
    - **Top productos** (barras horizontales): ranking con categoría/unidades en tooltip. Límite configurable (5-100).
    - **Ventas por usuario** (barras horizontales): ranking con comandas/ítems/ticket promedio en tooltip. Límite configurable (5-100).
    - **Badge de contexto**: muestra filtros aplicados y estado del toggle de impresión.
