@@ -11,7 +11,7 @@ from src.metrics import (
     get_ventas_por_hora,
     get_ventas_por_usuario,
 )
-from src.ui.components import bar_chart, line_chart, pie_chart, render_chart_section
+from src.ui.components import bar_chart, line_chart, pie_chart, combo_chart, render_chart_section
 from src.ui.layout import render_filter_context_badge
 
 
@@ -69,7 +69,7 @@ def render_charts_section(
         render_chart_section(
             title="Ventas por categoría",
             caption=(
-                "Ventas finalizadas agrupadas por categoría en el contexto actual "
+                "Relación de Ventas (barras) vs Unidades (línea) por categoría en el contexto actual "
                 + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
             ),
             data_fn=partial(
@@ -81,13 +81,15 @@ def render_charts_section(
                 use_impresion_log=ventas_use_impresion_log,
             ),
             chart_fn=(
-                lambda df: bar_chart(
+                lambda df: combo_chart(
                     df,
                     x="categoria",
-                    y="total_vendido",
+                    bar_y="total_vendido",
+                    line_y="unidades",
+                    bar_name="Ventas (Bs)",
+                    line_name="Unidades (Cant)",
                     title=None,
                     money=True,
-                    hover_data={"unidades": True, "comandas": True},
                 )
                 if grafico_categoria == "Barras"
                 else pie_chart(

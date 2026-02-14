@@ -19,9 +19,117 @@ from typing import Any, Callable
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import streamlit as st
 
 from src.ui.formatting import apply_plotly_bs
+
+
+def combo_chart(
+    df: pd.DataFrame,
+    x: str,
+    bar_y: str,
+    line_y: str,
+    bar_name: str = "Monto",
+    line_name: str = "Cantidad",
+    title: str | None = None,
+    *,
+    money: bool = False,
+    money_decimals: int = 2,
+    hover_data: dict[str, Any] | None = None,
+):
+    """Crea un gráfico combinado (Barras + Línea) con doble eje Y.
+    
+    Args:
+        df: DataFrame con los datos
+        x: Columna para eje X (categoría/tiempo)
+        bar_y: Columna para eje Y1 (Barras)
+        line_y: Columna para eje Y2 (Línea)
+        bar_name: Etiqueta para las barras
+        line_name: Etiqueta para la línea
+        title: Título del gráfico
+        money: Si True, aplica formato Bolivia al eje Y1
+        money_decimals: Decimales para formato dinero
+        hover_data: Dict con columnas adicionales para tooltip
+    """
+    
+    # Crear figura con eje secundario
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # 1. Agregar Barras (Eje Primario - Izq)
+    # Nota: Usamos customdata para pasar hover_data si es necesario, 
+    # pero para simplificar, confiamos en hovertemplate manual.
+    
+    # Preparar hovertemplate para barras
+    y_fmt = ",.2f" if money else ""
+    money_prefix = "Bs " if money else ""
+    bar_hovertemplate = (
+        f"<b>%{{x}}</b><br>" +
+        f"{bar_name}: {money_prefix}%{{y:{y_fmt}}}<br>" +
+        "<extra></extra>"
+    )
+
+    fig.add_trace(
+        go.Bar(
+            x=df[x],
+            y=df[bar_y],
+            name=bar_name,
+            hovertemplate=bar_hovertemplate,
+            marker_color="#636EFA", # Color standard Plotly
+        ),
+        secondary_y=False,
+    )
+
+    # 2. Agregar Línea (Eje Secundario - Der)
+    line_hovertemplate = (
+        f"<b>%{{x}}</b><br>" +
+        f"{line_name}: %{{y}}<br>" +
+        "<extra></extra>"
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=df[x],
+            y=df[line_y],
+            name=line_name,
+            mode="lines+markers",
+            hovertemplate=line_hovertemplate,
+            marker_color="#EF553B", # Color complementario Plotly
+        ),
+        secondary_y=True,
+    )
+
+    # Layout y Títulos
+    fig.update_layout(
+        title=title,
+        margin=dict(l=10, r=10, t=40, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        hovermode="x unified" # Tooltip unificado es mejor para comparar
+    )
+    
+    # Ejes Y
+    fig.update_yaxes(
+        title_text=bar_name, 
+        secondary_y=False,
+        showgrid=True,
+    )
+    fig.update_yaxes(
+        title_text=line_name, 
+        secondary_y=True,
+        showgrid=False, # Evitar cuadrícula conflictiva
+    )
+
+    if money:
+        fig.update_yaxes(
+            tickprefix="Bs ",
+            tickformat=",.0f", # Sin decimales en eje para limpieza
+            secondary_y=False
+        )
+        # Aplicar separadores globales (1.000,00)
+        apply_plotly_bs(fig)
+
+    return fig
 
 
 def bar_chart(
