@@ -37,7 +37,7 @@ def render_charts_section(
         render_chart_section(
             title="Ventas por hora",
             caption=(
-                "Ventas finalizadas agrupadas por HOUR(fecha_emision) en el contexto actual "
+                "Relación de Ventas (barras) vs Comandas (línea) agrupadas por hora en el contexto actual "
                 + ("(con log de impresión)." if ventas_use_impresion_log else "(estricto por vista).")
             ),
             data_fn=partial(
@@ -48,15 +48,16 @@ def render_charts_section(
                 mode_for_metrics,
                 use_impresion_log=ventas_use_impresion_log,
             ),
-            chart_fn=lambda df: line_chart(
+            chart_fn=lambda df: combo_chart(
                 df,
                 x="hora",
-                y="total_vendido",
+                bar_y="total_vendido",
+                line_y="comandas",
+                bar_name="Ventas (Bs)",
+                line_name="Comandas (#)",
                 title=None,
                 money=True,
-                hover_data={"comandas": True, "items": True},
-                markers=True,
-                show_average=mostrar_promedio_hora,
+                show_bar_average=mostrar_promedio_hora,
             ),
             conn=conn,
             startup=startup,
@@ -90,6 +91,7 @@ def render_charts_section(
                     line_name="Unidades (Cant)",
                     title=None,
                     money=True,
+                    line_shape="spline",
                 )
                 if grafico_categoria == "Barras"
                 else pie_chart(

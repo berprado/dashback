@@ -38,6 +38,8 @@ def combo_chart(
     money: bool = False,
     money_decimals: int = 2,
     hover_data: dict[str, Any] | None = None,
+    line_shape: str = "linear",
+    show_bar_average: bool = False,
 ):
     """Crea un gráfico combinado (Barras + Línea) con doble eje Y.
     
@@ -52,6 +54,8 @@ def combo_chart(
         money: Si True, aplica formato Bolivia al eje Y1
         money_decimals: Decimales para formato dinero
         hover_data: Dict con columnas adicionales para tooltip
+        line_shape: Forma de la línea ('linear', 'spline', 'hv', etc.)
+        show_bar_average: Si True, agrega línea de promedio para la serie de barras
     """
     
     # Crear figura con eje secundario
@@ -94,6 +98,7 @@ def combo_chart(
             y=df[line_y],
             name=line_name,
             mode="lines+markers",
+            line_shape=line_shape,
             hovertemplate=line_hovertemplate,
             marker_color="#EF553B", # Color complementario Plotly
         ),
@@ -128,6 +133,18 @@ def combo_chart(
         )
         # Aplicar separadores globales (1.000,00)
         apply_plotly_bs(fig)
+
+    # Agregar línea de promedio para la serie de barras si se solicita
+    if show_bar_average and not df.empty:
+        avg_value = df[bar_y].mean()
+        fig.add_hline(
+            y=avg_value,
+            line_dash="dash",
+            line_color="rgba(99, 110, 250, 0.5)",  # Color similar a las barras pero translúcido
+            annotation_text=f"Promedio: {avg_value:,.2f}",
+            annotation_position="top right",
+            secondary_y=False,
+        )
 
     return fig
 
