@@ -446,7 +446,24 @@ def get_ventas_por_hora(
 
 	where_sql, params = build_where(filters, mode, table_alias="v")
 	sql = q_ventas_por_hora(view_name, where_sql, use_impresion_log=use_impresion_log)
-	return _run_df(conn, sql, params, context="Error ejecutando ventas por hora", ttl=_ttl_for_mode(mode))
+	df = _run_df(conn, sql, params, context="Error ejecutando ventas por hora", ttl=_ttl_for_mode(mode))
+
+	# Rellenar horas faltantes (0-23) para tener un eje X completo
+	full_range = pd.DataFrame({"hora": range(24)})
+
+	if df is None or df.empty:
+		df = pd.DataFrame(columns=["hora", "total_vendido", "comandas", "items"])
+
+	# Asegurar que hora sea int para el merge
+	df["hora"] = pd.to_numeric(df["hora"], errors="coerce").fillna(0).astype(int)
+
+	df_merged = pd.merge(full_range, df, on="hora", how="left").fillna({
+		"total_vendido": 0.0,
+		"comandas": 0,
+		"items": 0.0
+	})
+
+	return df_merged
 
 
 def get_ventas_por_categoria(
