@@ -5,6 +5,12 @@
 
 ---
 
+Documentos de referencia:
+- `docs/01-flujo_inicio_dashboard.md` (lógica de arranque y casos límite)
+- `docs/02-guia_dashboard_backstage.md` (guía técnica y definición de vistas)
+- `docs/analisis_wac_cogs_margenes.md` (WAC/COGS/márgenes + mejoras propuestas)
+- `docs/playbook_performance_mysql56.md` (performance MySQL 5.6.12: EXPLAIN + índices mínimos)
+
 ## Estado de implementación (en este repo)
 
 Esta guía mezcla 2 cosas:

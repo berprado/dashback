@@ -200,6 +200,15 @@ Nota de formato/importante:
 
 ---
 
+## 5) Documentación técnica añadida
+
+Se incorporaron documentos de referencia para consolidar y operar mejor el stack financiero y su performance:
+
+- [docs/analisis_wac_cogs_margenes.md](docs/analisis_wac_cogs_margenes.md): análisis completo de WAC/COGS/márgenes, inconsistencias detectadas y oportunidades de mejora.
+- [docs/playbook_performance_mysql56.md](docs/playbook_performance_mysql56.md): playbook de performance para MySQL 5.6.12 con consultas EXPLAIN, checklist de índices y criterios de validación.
+
+---
+
 ## 5) Selección de entorno: Local vs Producción
 
 Se habilitó elegir el origen de datos desde el sidebar:

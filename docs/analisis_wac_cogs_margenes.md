@@ -859,6 +859,11 @@ Relación: Pour Cost % + Margen % = 100%
 
 ### 8.1 Corto Plazo (Semana 1-2)
 
+**0. Ajustes rapidos para MySQL 5.6.12**
+- Evitar subconsultas o vistas muy anidadas en tiempo real; en 5.6 las vistas no se materializan.
+- Preferir `UNION ALL` (ya se usa) y evitar funciones sobre columnas indexadas en el `WHERE`.
+- Limitar `COUNT(DISTINCT ...)` en vistas base; preagregar por `id_comanda` cuando sea posible.
+
 **1. Verificar y Documentar Nombres de Vistas WAC**
 ```sql
 -- Script de verificación
@@ -908,6 +913,53 @@ SELECT id_comanda, total_venta, cogs_comanda, margen_comanda
 FROM vw_margen_comanda
 WHERE margen_comanda < 0
 LIMIT 20;
+```
+
+**4. Set de consultas EXPLAIN recomendado (MySQL 5.6.12)**
+> Objetivo: detectar planes de ejecucion costosos en vistas criticas.
+
+```sql
+-- P&L consolidado por operativa
+EXPLAIN
+SELECT
+  SUM(total_venta) as ventas,
+  SUM(cogs_comanda) as cogs,
+  SUM(margen_comanda) as margen
+FROM vw_margen_comanda
+WHERE id_operacion = 1234;
+
+-- P&L por rango de fechas
+EXPLAIN
+SELECT
+  SUM(total_venta) as ventas,
+  SUM(cogs_comanda) as cogs,
+  SUM(margen_comanda) as margen
+FROM vw_margen_comanda
+WHERE fecha_emision BETWEEN '2026-02-01 00:00:00' AND '2026-02-15 23:59:59';
+
+-- COGS por comanda (top costos)
+EXPLAIN
+SELECT
+  id_operacion,
+  id_comanda,
+  cogs_comanda
+FROM vw_cogs_comanda
+WHERE id_operacion = 1234
+ORDER BY cogs_comanda DESC
+LIMIT 50;
+
+-- Consumo valorizado por producto
+EXPLAIN
+SELECT
+  id_operacion,
+  id_producto,
+  cantidad_consumida_base,
+  wac_operativa,
+  costo_consumo
+FROM vw_consumo_valorizado_operativa
+WHERE id_operacion = 1234
+ORDER BY costo_consumo DESC
+LIMIT 50;
 ```
 
 ### 8.2 Mediano Plazo (Mes 1)
@@ -978,6 +1030,36 @@ Crear documento: `docs/wac_cogs/casos_limite_cogs.md` que incluya:
   - Pour Cost supere 45% o baje de 25%
   - Margen de una operativa esté >2 desviaciones estándar del promedio
   - Se detecten productos vendidos sin WAC definido
+
+### 8.4 Checklist de indices minimos (MySQL 5.6.12)
+
+> Nota: este checklist asume tablas base estandar. Ajustar segun DDL real.
+
+**bar_comanda**
+- Index compuesto para filtros operativos y tiempo: `(id_operacion, fecha_emision)`
+- Index por estado: `(estado, estado_comanda, estado_impresion)`
+- Index por identificador: `(id)`
+
+**bar_detalle_comanda_salida**
+- Index compuesto para joins: `(id_comanda, id_producto)`
+- Index por fecha si existe en detalle: `(fecha_emision)`
+
+**alm_ingreso**
+- Index por producto: `(id_producto)`
+- Index por fecha si aplica: `(fecha_ingreso)`
+
+**alm_producto**
+- Index por estado si se filtra por `estado='HAB'`: `(estado)`
+
+**ope_operacion**
+- Index por estado operativo: `(estado, estado_operacion)`
+
+**parameter_table**
+- Index compuesto por catalogo y estado: `(id_master, estado)`
+
+**Vistas materializadas (si se implementan)**
+- Tabla resumen P&L por operativa: `(id_operacion)`
+- Tabla de WAC global por producto: `(id_producto)`
 
 ---
 
