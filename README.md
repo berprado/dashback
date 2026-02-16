@@ -70,9 +70,14 @@
 - [docs/03-evolucion_y_mejoras.md](docs/03-evolucion_y_mejoras.md): evolución y cambios implementados (fase 1).
 - [docs/analisis_wac_cogs_margenes.md](docs/analisis_wac_cogs_margenes.md): análisis completo de WAC/COGS/márgenes + oportunidades de mejora.
 - [docs/playbook_performance_mysql56.md](docs/playbook_performance_mysql56.md): playbook de performance para MySQL 5.6.12 (consultas, índices, checks).
-- [docs/reporte_explain_adminerp_copy.md](docs/reporte_explain_adminerp_copy.md): reporte de EXPLAIN en adminerp_copy (solo lectura).
+- [docs/reporte_indices_aplicados.md](docs/reporte_indices_aplicados.md): ⭐ **reporte de aplicación de índices** (EXPLAIN antes/después en adminerp_copy).
+- [docs/reporte_explain_adminerp_copy.md](docs/reporte_explain_adminerp_copy.md): reporte de EXPLAIN baseline (solo lectura).
 - [docs/wac_cogs/consultas_cogs_wac.md](docs/wac_cogs/consultas_cogs_wac.md): guía técnica de consultas COGS y WAC (onboarding).
 - [docs/wac_cogs/consultas_kpis_actividad_cortesias.md](docs/wac_cogs/consultas_kpis_actividad_cortesias.md): guía técnica de KPIs, actividad y cortesías (onboarding).
+
+Scripts:
+- [scripts/create_indexes_safe.sql](scripts/create_indexes_safe.sql): script SQL con verificación previa de índices (modo seguro para MySQL 5.6.12).
+- [scripts/apply_indexes_and_explain.py](scripts/apply_indexes_and_explain.py): script Python para aplicar índices y ejecutar EXPLAIN antes/después.
 
 Capturas:
 - [docs/capturas/](docs/capturas/)

@@ -869,6 +869,14 @@ Se consultó el DDL directamente en **adminerp_copy** (entorno de pruebas) media
   - Esto corresponde a **PROCESADO** y **VENTA** (según `parameter_table`).
 - **`vw_combo_detalle_operacion`**: incluye `bc.tipo_salida IN (50, 51)`; por lo tanto, **incluye cortesías** en el desglose de combos.
 
+**Hallazgos sobre columnas clave:**
+- **`bar_comanda.fecha`** (datetime): columna en la tabla base.
+  - Las vistas del dashboard (`comandas_v6`, `comandas_v6_todas`, `comandas_v6_base`) la **renombran** como `fecha_emision`.
+  - Por lo tanto: los índices se crean sobre `fecha` en la tabla base, pero el código consulta `fecha_emision` en las vistas.
+- **`alm_ingreso.id_producto`**: **NO EXISTE**.
+  - La columna `id_producto` está en `alm_detalle_ingreso` (detalle de cada ingreso al almacén).
+  - El WAC se calcula desde el join `alm_ingreso` ↔ `alm_detalle_ingreso`.
+
 Implicación clave:
 - En este entorno, el WAC efectivo para COGS y consumo valorizado es **`vw_wac_producto_almacen` con `id_almacen=1`**.
 - `vw_wac_global_producto` existe, pero **no se usa** en las vistas de COGS/consumo actuales.
@@ -878,11 +886,14 @@ Implicación clave:
 Se revisaron los índices actuales con `SHOW INDEX`. Resumen:
 
 - **bar_comanda**: solo PK + FKs (`id_operacion`, `id_mesa`, `id_usuario`, `id_barra`).
-  - **Faltan** índices compuestos para `estado`, `estado_comanda`, `estado_impresion` y `fecha_emision`.
+  - **Faltan** índices compuestos para `estado`, `estado_comanda`, `estado_impresion`.
+  - **Falta** índice compuesto `(id_operacion, fecha)` para filtros históricos.
+  - **Nota:** la columna es `fecha` (no `fecha_emision`); las vistas la renombran.
 - **bar_detalle_comanda_salida**: índices individuales por `id_comanda`, `id_producto` y `id_salida_combo_coctel`.
   - **Falta** índice compuesto `(id_comanda, id_producto)` (útil para joins y agregaciones).
 - **alm_ingreso**: PK + índices por `id_almacen`, `id_proveedor`, `id_operacion`, `id_barra`.
-  - **Falta** índice por `id_producto` (clave para WAC).
+  - **IMPORTANTE:** `alm_ingreso` NO tiene columna `id_producto` (está en `alm_detalle_ingreso`).
+  - Índice por `fecha` podría mejorar cálculos de WAC por período (opcional).
 - **alm_producto**: índices por `id_proveedor`, `id_categoria`, `id_barra`.
   - **Falta** índice por `estado`.
 - **ope_operacion**: solo PK + `id_dia`.

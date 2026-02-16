@@ -12,7 +12,10 @@
 - `COUNT(DISTINCT ...)` puede ser costoso; preagregar por `id_comanda` cuando aplique.
 - Preferir `UNION ALL` cuando no se requiere deduplicacion (ya aplicado en COGS).
 - Limitar resultados con `LIMIT` y ordenar solo cuando el usuario lo pide.
-
+**Nota sobre columnas de fecha:**
+- **Tabla base:** `bar_comanda.fecha` (datetime)
+- **Vistas dashboard:** `comandas_v6.fecha_emision` (renombrada desde `bar_comanda.fecha`)
+- **Índices:** Se crean sobre `fecha` en la tabla base, pero desde las vistas se consulta como `fecha_emision`.
 ---
 
 ## 2) Checklist de diagnostico rapido
@@ -23,7 +26,7 @@
   - `type=ALL` (full scan) en tablas grandes.
   - `rows` muy altos sin filtro.
   - `Using temporary` / `Using filesort` en agregaciones grandes.
-- Validar que `id_operacion` y `fecha_emision` no esten envueltas en funciones.
+- Validar que `id_operacion` y `fecha_emision` (en vistas) / `fecha` (en tabla base) no esten envueltas en funciones.
 
 ---
 
@@ -40,13 +43,16 @@ FROM vw_margen_comanda
 WHERE id_operacion = 1234;
 
 -- P&L por rango de fechas
+-- NOTA: vw_margen_comanda no expone fecha_emision directamente.
+-- Este ejemplo es ilustrativo. Usar comandas_v6 para filtrar por fecha.
 EXPLAIN
 SELECT
-    SUM(total_venta) as ventas,
-    SUM(cogs_comanda) as cogs,
-    SUM(margen_comanda) as margen
-FROM vw_margen_comanda
-WHERE fecha_emision BETWEEN '2026-02-01 00:00:00' AND '2026-02-15 23:59:59';
+    SUM(v.sub_total) as ventas
+FROM comandas_v6 v
+WHERE v.fecha_emision BETWEEN '2026-02-01 00:00:00' AND '2026-02-15 23:59:59'
+  AND v.tipo_salida = 'VENTA'
+  AND v.estado_comanda = 'PROCESADO'
+  AND v.estado_impresion = 'IMPRESO';
 
 -- COGS por comanda (top costos)
 EXPLAIN
@@ -85,11 +91,11 @@ LIMIT 50;
 
 **bar_detalle_comanda_salida**
 - `(id_comanda, id_producto)`
-- `(fecha_emision)` si existe
 
 **alm_ingreso**
-- No tiene `id_producto`; el indice relevante esta en `alm_detalle_ingreso`.
-- `(fecha)` si aplica
+- **IMPORTANTE:** `alm_ingreso` NO tiene columna `id_producto`.
+- `id_producto` está en `alm_detalle_ingreso` (detalle de cada ingreso).
+- Índice por `(fecha)` si se filtra WAC por rango de fechas
 
 **alm_producto**
 - `(estado)` si se filtra por `estado='HAB'`
@@ -111,7 +117,8 @@ LIMIT 50;
    - Crear una vista base de cantidades y derivar valorizado con JOIN a WAC.
 
 3. **Evitar full scans en historico**
-   - Asegurar indices en `fecha_emision` y filtrar por rango sin funciones.
+   - Asegurar índice en `bar_comanda.fecha` (expuesto como `fecha_emision` en vistas).
+   - Filtrar por rango sin funciones: `WHERE fecha_emision BETWEEN :dt_ini AND :dt_fin`.
 
 4. **Reducir COUNT(DISTINCT) repetidos**
    - Preagregar por `id_comanda` en subvista si hay latencia.

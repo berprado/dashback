@@ -353,7 +353,96 @@ Se implementó composición de gráficos (Barras + Líneas) con doble eje Y usan
 
 ---
 
-## 13) Próximas ideas (no implementadas aún)
+## 13) Análisis de Performance y Aplicación de Índices (MySQL 5.6.12)
+
+### 13.1 Auditoría de Vistas y Diagnóstico
+
+**Objetivo:** Identificar cuellos de botella en las consultas de WAC/COGS/márgenes para operativas activas y rangos de fechas.
+
+**Proceso:**
+1. Se auditó la estructura DDL real de las vistas financieras en `adminerp_copy` (entorno de pruebas).
+2. Se ejecutó `SHOW INDEX` en todas las tablas base para identificar índices existentes.
+3. Se identificaron gaps críticos:
+   - `bar_comanda`: faltaban índices compuestos para filtros de estado y operación+fecha.
+   - `bar_detalle_comanda_salida`: faltaba índice compuesto para joins de comanda+producto.
+   - `alm_producto`, `ope_operacion`, `parameter_table`: faltaban índices simples para filtros comunes.
+
+**Hallazgos clave:**
+- Columna real es `fecha` (no `fecha_emision`) en `bar_comanda`.
+- `alm_ingreso` no tiene `id_producto` (está en `alm_detalle_ingreso`).
+- Vistas WAC/COGS consumen `vw_wac_producto_almacen` (no `vw_wac_global_producto`).
+
+📄 **Documentación:** `docs/analisis_wac_cogs_margenes.md` (secciones 7.7 y 7.8)
+
+### 13.2 Índices Recomendados y Aplicados
+
+Se crearon **6 índices** en el entorno de pruebas (`adminerp_copy`):
+
+**Críticos (MUST):**
+1. `bar_comanda.idx_bar_comanda_op_fecha` → `(id_operacion, fecha)`
+2. `bar_comanda.idx_bar_comanda_estados` → `(estado, estado_comanda, estado_impresion)`
+3. `bar_detalle_comanda_salida.idx_detalle_comanda_producto` → `(id_comanda, id_producto)`
+
+**Opcionales (SHOULD):**
+4. `alm_producto.idx_alm_producto_estado` → `(estado)`
+5. `ope_operacion.idx_ope_operacion_estado` → `(estado, estado_operacion)`
+6. `parameter_table.idx_parameter_master_estado` → `(id_master, estado)`
+
+📜 **Scripts:**
+- `scripts/create_indexes_safe.sql` (con verificación previa vía `information_schema`)
+- `scripts/apply_indexes_and_explain.py` (aplicación automatizada + EXPLAIN antes/después)
+
+### 13.3 Resultados: EXPLAIN Antes/Después
+
+| Consulta | Tipo (antes → después) | Rows (antes → después) | Mejora |
+|----------|------------------------|------------------------|--------|
+| **Q4_comandas_states_filter** | ALL → ref | 56,934 → 1 | ✅ **100%** |
+| Q2_consumo_valorizado | ref → ref | 356 → 284 | ✅ 20.2% |
+| Q1_margen_por_operacion | ref → ref | 10 → 10 | → Sin cambio visible |
+| Q3_comandas_ventas_activas | ref → ref | 148 → 148 | → Sin cambio |
+
+**Mejora destacada:**
+- **Q4** (filtros de estado): cambió de `type=ALL` (full table scan de 56,934 rows) a `type=ref` (index lookup con 1 row estimado). El índice `idx_bar_comanda_estados` es ahora un **covering index** (Using index) → no necesita acceder a la tabla.
+
+**Limitaciones observadas:**
+- "Using temporary; Using filesort" persiste en vistas anidadas (limitación de MySQL 5.6.12, no de índices).
+- Consultas simples que ya tenían índice en FK no muestran mejora visible.
+
+📊 **Reporte completo:** `docs/reporte_indices_aplicados.md`  
+📦 **Datos crudos (JSON):** `docs/explain_before_after_report.json`
+
+### 13.4 Siguientes Pasos
+
+- **Producción:** Aplicar índices críticos (MUST) en horario de baja carga.
+- **Monitoreo:** Validar tiempo de respuesta de `get_margen_comanda()` y `get_comandas_by_filter()` (objetivo: <1.5s).
+- **Testing:** Verificar que el dashboard carga correctamente en realtime y histórico después de aplicar índices.
+
+📘 **Playbook de performance:** `docs/playbook_performance_mysql56.md`
+
+### 13.5 Aclaraciones sobre DDL (Febrero 2026)
+
+Durante la auditoría de DDL real en `adminerp_copy` se identificaron diferencias entre tabla base y vistas:
+
+**Columnas de fecha:**
+- **Tabla base:** `bar_comanda.fecha` (datetime)
+- **Vistas dashboard:** `comandas_v6.fecha_emision` (renombrada desde `bar_comanda.fecha`)
+- **Implicación:** Los índices se crean sobre `fecha` en la tabla base, pero el código consulta `fecha_emision` en las vistas. Esto es correcto y no requiere cambios.
+
+**Columna id_producto en almacén:**
+- **`alm_ingreso`:** NO tiene columna `id_producto`
+- **`alm_detalle_ingreso`:** SÍ tiene `id_producto` (detalle de cada ingreso)
+- **Implicación:** El WAC se calcula desde el join `alm_ingreso` ↔ `alm_detalle_ingreso`. Índices relevantes deben estar en `alm_detalle_ingreso`.
+
+**Vistas WAC:**
+- **Usada actualmente:** `vw_wac_producto_almacen` (calcula WAC desde ingresos históricos con `id_almacen=1`)
+- **Existe pero no se usa:** `vw_wac_global_producto` (toma WAC desde `vw_costo_heredado_producto`)
+- **Implicación:** El sistema usa WAC global calculado desde ingresos históricos, no WAC por almacén variable.
+
+Documentación actualizada: `docs/playbook_performance_mysql56.md`, `docs/analisis_wac_cogs_margenes.md`, `scripts/create_indexes_safe.sql`, `docs/reporte_indices_aplicados.md`.
+
+---
+
+## 14) Próximas ideas (no implementadas aún)
 
 - Prefacturación (facturado vs no facturado).
 - Exportación de detalle (CSV/Excel) bajo demanda.

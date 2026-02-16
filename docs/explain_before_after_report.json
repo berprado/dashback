@@ -1,0 +1,872 @@
+{
+  "timestamp": "2026-02-15T23:15:24.749624",
+  "environment": "adminerp_copy",
+  "indexes_created": [
+    "idx_bar_comanda_op_fecha",
+    "idx_bar_comanda_estados",
+    "idx_detalle_comanda_producto",
+    "idx_alm_producto_estado",
+    "idx_ope_operacion_estado",
+    "idx_parameter_master_estado"
+  ],
+  "explain_before": [
+    {
+      "query": "Q1_margen_por_operacion",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "PRIMARY",
+          "table": "<derived2>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 10,
+          "Extra": null
+        },
+        {
+          "id": 2,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "ALL",
+          "possible_keys": "PRIMARY",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 56934,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 2,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_salida_barra_bar_comanda1_idx",
+          "key": "fk_bar_salida_barra_bar_comanda1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.bc.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 2,
+          "select_type": "DERIVED",
+          "table": "<derived3>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "13",
+          "ref": "adminerp_copy.bc.id_operacion,adminerp_copy.bc.id,adminerp_copy.bc.id_barra",
+          "rows": 12,
+          "Extra": null
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "<derived4>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 733740,
+          "Extra": "Using temporary; Using filesort"
+        },
+        {
+          "id": 4,
+          "select_type": "DERIVED",
+          "table": "<derived6>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 5025,
+          "Extra": null
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "<derived8>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 15,
+          "Extra": "Using temporary; Using filesort"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "ap",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "w.id_producto",
+          "rows": 1,
+          "Extra": null
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "dsc",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_sal_combo_coctel_alm_producto1_idx,fk_bar_detalle_sal_combo_coctel_bar_salida_combo_coctel1_idx",
+          "key": "fk_bar_detalle_sal_combo_coctel_alm_producto1_idx",
+          "key_len": "4",
+          "ref": "w.id_producto",
+          "rows": 335,
+          "Extra": "Using where"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "scc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dsc.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using index"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx,fk_bar_salida_barra_bar_comanda1_idx",
+          "key": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx",
+          "key_len": "5",
+          "ref": "adminerp_copy.dsc.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_comanda",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 8,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ALL",
+          "possible_keys": "PRIMARY",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 8,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 5,
+          "select_type": "UNION",
+          "table": "<derived9>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 728715,
+          "Extra": null
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "<derived13>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ref",
+          "possible_keys": "PRIMARY,fk_alm_ingreso_alm_almacen1_idx,alm_ingreso_ibfk_1",
+          "key": "alm_ingreso_ibfk_1",
+          "key_len": "5",
+          "ref": "v.id_operacion_ultima",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx,fk_alm_detalle_ingreso_alm_producto1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx,fk_bar_salida_barra_alm_producto1_idx,fk_bar_salida_barra_bar_comanda1_idx,bar_detalle_comanda_salida_ibfk_1",
+          "key": "fk_bar_salida_barra_alm_producto1_idx",
+          "key_len": "5",
+          "ref": "v.id_producto",
+          "rows": 481,
+          "Extra": "Using where"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_comanda",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 13,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ALL",
+          "possible_keys": "PRIMARY,alm_ingreso_ibfk_1",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 13,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": null,
+          "select_type": "UNION RESULT",
+          "table": "<union4,5>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": null,
+          "Extra": "Using temporary"
+        }
+      ]
+    },
+    {
+      "query": "Q2_consumo_valorizado",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "PRIMARY",
+          "table": "<derived3>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 356,
+          "Extra": null
+        },
+        {
+          "id": 1,
+          "select_type": "PRIMARY",
+          "table": "<derived5>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "8",
+          "ref": "const,ci.id_producto",
+          "rows": 10,
+          "Extra": null
+        },
+        {
+          "id": 5,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ALL",
+          "possible_keys": "PRIMARY",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 5,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ALL",
+          "possible_keys": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx,fk_bar_salida_barra_bar_comanda1_idx",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 71280,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "scc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using index"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_comanda",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "dsc",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_sal_combo_coctel_alm_producto1_idx,fk_bar_detalle_sal_combo_coctel_bar_salida_combo_coctel1_idx",
+          "key": "fk_bar_detalle_sal_combo_coctel_bar_salida_combo_coctel1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "ap",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dsc.id_producto",
+          "rows": 1,
+          "Extra": null
+        }
+      ]
+    },
+    {
+      "query": "Q3_comandas_ventas_activas",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "SIMPLE",
+          "table": "bar_comanda",
+          "type": "ref",
+          "possible_keys": "fk_bar_comanda_ope_operacion1_idx",
+          "key": "fk_bar_comanda_ope_operacion1_idx",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 148,
+          "Extra": "Using index"
+        }
+      ]
+    },
+    {
+      "query": "Q4_comandas_states_filter",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "SIMPLE",
+          "table": "bar_comanda",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 56934,
+          "Extra": "Using where"
+        }
+      ]
+    }
+  ],
+  "explain_after": [
+    {
+      "query": "Q1_margen_por_operacion",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "PRIMARY",
+          "table": "<derived2>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 10,
+          "Extra": null
+        },
+        {
+          "id": 2,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "ref",
+          "possible_keys": "PRIMARY,idx_bar_comanda_estados",
+          "key": "idx_bar_comanda_estados",
+          "key_len": "9",
+          "ref": "const,const",
+          "rows": 28467,
+          "Extra": "Using index condition; Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 2,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_salida_barra_bar_comanda1_idx,idx_detalle_comanda_producto",
+          "key": "fk_bar_salida_barra_bar_comanda1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.bc.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 2,
+          "select_type": "DERIVED",
+          "table": "<derived3>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "13",
+          "ref": "adminerp_copy.bc.id_operacion,adminerp_copy.bc.id,adminerp_copy.bc.id_barra",
+          "rows": 12,
+          "Extra": null
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "<derived4>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 733740,
+          "Extra": "Using temporary; Using filesort"
+        },
+        {
+          "id": 4,
+          "select_type": "DERIVED",
+          "table": "<derived6>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 5025,
+          "Extra": null
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "<derived8>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 15,
+          "Extra": "Using temporary; Using filesort"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "ap",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "w.id_producto",
+          "rows": 1,
+          "Extra": null
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "dsc",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_sal_combo_coctel_alm_producto1_idx,fk_bar_detalle_sal_combo_coctel_bar_salida_combo_coctel1_idx",
+          "key": "fk_bar_detalle_sal_combo_coctel_alm_producto1_idx",
+          "key_len": "4",
+          "ref": "w.id_producto",
+          "rows": 335,
+          "Extra": "Using where"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "scc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dsc.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using index"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx,fk_bar_salida_barra_bar_comanda1_idx,idx_detalle_comanda_producto",
+          "key": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx",
+          "key_len": "5",
+          "ref": "adminerp_copy.dsc.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 6,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY,idx_bar_comanda_estados",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_comanda",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 8,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ALL",
+          "possible_keys": "PRIMARY",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 8,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 5,
+          "select_type": "UNION",
+          "table": "<derived9>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 728715,
+          "Extra": null
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "<derived13>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ref",
+          "possible_keys": "PRIMARY,fk_alm_ingreso_alm_almacen1_idx,alm_ingreso_ibfk_1",
+          "key": "alm_ingreso_ibfk_1",
+          "key_len": "5",
+          "ref": "v.id_operacion_ultima",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx,fk_alm_detalle_ingreso_alm_producto1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx,fk_bar_salida_barra_alm_producto1_idx,fk_bar_salida_barra_bar_comanda1_idx,bar_detalle_comanda_salida_ibfk_1,idx_detalle_comanda_producto",
+          "key": "fk_bar_salida_barra_alm_producto1_idx",
+          "key_len": "5",
+          "ref": "v.id_producto",
+          "rows": 481,
+          "Extra": "Using where"
+        },
+        {
+          "id": 9,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY,idx_bar_comanda_estados",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_comanda",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 13,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ALL",
+          "possible_keys": "PRIMARY,alm_ingreso_ibfk_1",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 13,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": null,
+          "select_type": "UNION RESULT",
+          "table": "<union4,5>",
+          "type": "ALL",
+          "possible_keys": null,
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": null,
+          "Extra": "Using temporary"
+        }
+      ]
+    },
+    {
+      "query": "Q2_consumo_valorizado",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "PRIMARY",
+          "table": "<derived3>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 284,
+          "Extra": null
+        },
+        {
+          "id": 1,
+          "select_type": "PRIMARY",
+          "table": "<derived5>",
+          "type": "ref",
+          "possible_keys": "<auto_key0>",
+          "key": "<auto_key0>",
+          "key_len": "8",
+          "ref": "const,ci.id_producto",
+          "rows": 10,
+          "Extra": null
+        },
+        {
+          "id": 5,
+          "select_type": "DERIVED",
+          "table": "i",
+          "type": "ALL",
+          "possible_keys": "PRIMARY",
+          "key": null,
+          "key_len": null,
+          "ref": null,
+          "rows": 1515,
+          "Extra": "Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 5,
+          "select_type": "DERIVED",
+          "table": "di",
+          "type": "ref",
+          "possible_keys": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key": "fk_alm_detalle_ingreso_alm_ingreso1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.i.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "bc",
+          "type": "ref",
+          "possible_keys": "PRIMARY,idx_bar_comanda_estados",
+          "key": "idx_bar_comanda_estados",
+          "key_len": "9",
+          "ref": "const,const",
+          "rows": 28467,
+          "Extra": "Using index condition; Using where; Using temporary; Using filesort"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "dcs",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_comanda_salida_bar_salida_combo_coctel1_idx,fk_bar_salida_barra_bar_comanda1_idx,idx_detalle_comanda_producto",
+          "key": "fk_bar_salida_barra_bar_comanda1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.bc.id",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "scc",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using index"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "dsc",
+          "type": "ref",
+          "possible_keys": "fk_bar_detalle_sal_combo_coctel_alm_producto1_idx,fk_bar_detalle_sal_combo_coctel_bar_salida_combo_coctel1_idx",
+          "key": "fk_bar_detalle_sal_combo_coctel_bar_salida_combo_coctel1_idx",
+          "key_len": "4",
+          "ref": "adminerp_copy.dcs.id_salida_combo_coctel",
+          "rows": 1,
+          "Extra": "Using where"
+        },
+        {
+          "id": 3,
+          "select_type": "DERIVED",
+          "table": "ap",
+          "type": "eq_ref",
+          "possible_keys": "PRIMARY",
+          "key": "PRIMARY",
+          "key_len": "4",
+          "ref": "adminerp_copy.dsc.id_producto",
+          "rows": 1,
+          "Extra": null
+        }
+      ]
+    },
+    {
+      "query": "Q3_comandas_ventas_activas",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "SIMPLE",
+          "table": "bar_comanda",
+          "type": "ref",
+          "possible_keys": "fk_bar_comanda_ope_operacion1_idx,idx_bar_comanda_op_fecha",
+          "key": "fk_bar_comanda_ope_operacion1_idx",
+          "key_len": "4",
+          "ref": "const",
+          "rows": 148,
+          "Extra": "Using index"
+        }
+      ]
+    },
+    {
+      "query": "Q4_comandas_states_filter",
+      "plan": [
+        {
+          "id": 1,
+          "select_type": "SIMPLE",
+          "table": "bar_comanda",
+          "type": "ref",
+          "possible_keys": "idx_bar_comanda_estados",
+          "key": "idx_bar_comanda_estados",
+          "key_len": "14",
+          "ref": "const,const,const",
+          "rows": 1,
+          "Extra": "Using where; Using index"
+        }
+      ]
+    }
+  ]
+}
