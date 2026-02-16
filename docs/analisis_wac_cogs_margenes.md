@@ -853,6 +853,45 @@ Relación: Pour Cost % + Margen % = 100%
 | INC-004 | 🔴 Alta | Trazabilidad | Corrección crítica sin versionado ni backup | ⚠️ Pendiente |
 | INC-005 | 🟢 Baja | Documentación | Información dispersa en múltiples archivos | ✅ Resuelto (este doc) |
 
+### 7.7 🔎 DDL real en adminerp_copy (solo lectura)
+
+Se consultó el DDL directamente en **adminerp_copy** (entorno de pruebas) mediante `SHOW CREATE VIEW`. Hallazgos relevantes:
+
+- **`vw_wac_producto_almacen`**: calcula `wac_global` desde `alm_detalle_ingreso` + `alm_ingreso`.
+  - Filtro: `i.estado='HAB'`, `di.estado='HAB'`, `i.ind_estado_ingreso=1`, `di.precio_costo>0`.
+  - Agrupa por `id_almacen` y `id_producto`.
+- **`vw_wac_global_producto`**: **no** calcula desde ingresos; toma `wac_global` desde `vw_costo_heredado_producto`.
+  - Esto confirma que hay **dos fuentes de WAC** distintas coexistiendo.
+- **`vw_cogs_comanda_combos`**: usa **`vw_wac_producto_almacen`** y fija `id_almacen=1`.
+  - No utiliza `vw_wac_global_producto`.
+- **`vw_consumo_valorizado_operativa`**: expone `wac_operativa` pero en realidad es `wac_global` de `vw_wac_producto_almacen` con `id_almacen=1`.
+- **`vw_margen_comanda`**: filtra por `bc.estado_comanda = 26` y `bc.tipo_salida = 50`.
+  - Esto corresponde a **PROCESADO** y **VENTA** (según `parameter_table`).
+- **`vw_combo_detalle_operacion`**: incluye `bc.tipo_salida IN (50, 51)`; por lo tanto, **incluye cortesías** en el desglose de combos.
+
+Implicación clave:
+- En este entorno, el WAC efectivo para COGS y consumo valorizado es **`vw_wac_producto_almacen` con `id_almacen=1`**.
+- `vw_wac_global_producto` existe, pero **no se usa** en las vistas de COGS/consumo actuales.
+
+### 7.8 🧭 Estado real de índices en adminerp_copy (solo lectura)
+
+Se revisaron los índices actuales con `SHOW INDEX`. Resumen:
+
+- **bar_comanda**: solo PK + FKs (`id_operacion`, `id_mesa`, `id_usuario`, `id_barra`).
+  - **Faltan** índices compuestos para `estado`, `estado_comanda`, `estado_impresion` y `fecha_emision`.
+- **bar_detalle_comanda_salida**: índices individuales por `id_comanda`, `id_producto` y `id_salida_combo_coctel`.
+  - **Falta** índice compuesto `(id_comanda, id_producto)` (útil para joins y agregaciones).
+- **alm_ingreso**: PK + índices por `id_almacen`, `id_proveedor`, `id_operacion`, `id_barra`.
+  - **Falta** índice por `id_producto` (clave para WAC).
+- **alm_producto**: índices por `id_proveedor`, `id_categoria`, `id_barra`.
+  - **Falta** índice por `estado`.
+- **ope_operacion**: solo PK + `id_dia`.
+  - **Falta** índice compuesto `(estado, estado_operacion)`.
+- **parameter_table**: PK + índice por `id_master`.
+  - **Falta** índice compuesto `(id_master, estado)`.
+
+Estos gaps explican por qué los `EXPLAIN` muestran `Using temporary` y `Using filesort` en varias capas de vistas.
+
 ---
 
 ## 8. Recomendaciones
@@ -1036,17 +1075,18 @@ Crear documento: `docs/wac_cogs/casos_limite_cogs.md` que incluya:
 > Nota: este checklist asume tablas base estandar. Ajustar segun DDL real.
 
 **bar_comanda**
-- Index compuesto para filtros operativos y tiempo: `(id_operacion, fecha_emision)`
+- Index compuesto para filtros operativos y tiempo: `(id_operacion, fecha)`
 - Index por estado: `(estado, estado_comanda, estado_impresion)`
-- Index por identificador: `(id)`
 
 **bar_detalle_comanda_salida**
 - Index compuesto para joins: `(id_comanda, id_producto)`
-- Index por fecha si existe en detalle: `(fecha_emision)`
+- Index por fecha si existe en detalle
+
+**alm_detalle_ingreso**
+- Index compuesto sugerido: `(id_ingreso, id_producto)` (opcional si hay latencia en WAC)
 
 **alm_ingreso**
-- Index por producto: `(id_producto)`
-- Index por fecha si aplica: `(fecha_ingreso)`
+- Index por fecha si aplica: `(fecha)`
 
 **alm_producto**
 - Index por estado si se filtra por `estado='HAB'`: `(estado)`
@@ -1207,19 +1247,19 @@ Este documento refleja el estado del sistema **al 15 de febrero de 2026**, basá
 ### Limitaciones del Análisis
 
 ⚠️ **Este análisis NO incluye:**
-- Acceso directo a la base de datos MySQL para validar DDL de vistas
-- Ejecución de consultas para verificar resultados reales
+- Cambios en la base de datos (solo lectura)
+- Ejecución de consultas de carga o stress
 - Revisión de logs de errores o problemas en producción
 - Entrevistas con usuarios o stakeholders sobre casos límite
 
 ### Validaciones Pendientes
 
 Para completar el análisis, se recomienda:
-1. ✅ Ejecutar `SHOW CREATE VIEW` para cada vista mencionada
-2. ✅ Validar con datos reales que los cálculos son correctos
-3. ✅ Comparar resultados del dashboard con reportes manuales/Excel
-4. ✅ Verificar performance de consultas en producción
-5. ✅ Confirmar umbrales de Pour Cost con gerencia/contabilidad
+1. ✅ Ejecutar `SHOW CREATE VIEW` para cada vista mencionada (hecho en `adminerp_copy`)
+2. ✅ Validar con datos reales que los cálculos son correctos (pendiente)
+3. ✅ Comparar resultados del dashboard con reportes manuales/Excel (pendiente)
+4. ✅ Verificar performance de consultas en producción (pendiente)
+5. ✅ Confirmar umbrales de Pour Cost con gerencia/contabilidad (pendiente)
 
 ### Contacto y Mantenimiento
 

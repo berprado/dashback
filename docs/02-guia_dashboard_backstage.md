@@ -10,6 +10,7 @@ Documentos de referencia:
 - `docs/02-guia_dashboard_backstage.md` (guía técnica y definición de vistas)
 - `docs/analisis_wac_cogs_margenes.md` (WAC/COGS/márgenes + mejoras propuestas)
 - `docs/playbook_performance_mysql56.md` (performance MySQL 5.6.12: EXPLAIN + índices mínimos)
+- `docs/reporte_explain_adminerp_copy.md` (reporte EXPLAIN en pruebas)
 
 ## Estado de implementación (en este repo)
 

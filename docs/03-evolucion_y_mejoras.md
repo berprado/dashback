@@ -206,6 +206,11 @@ Se incorporaron documentos de referencia para consolidar y operar mejor el stack
 
 - [docs/analisis_wac_cogs_margenes.md](docs/analisis_wac_cogs_margenes.md): análisis completo de WAC/COGS/márgenes, inconsistencias detectadas y oportunidades de mejora.
 - [docs/playbook_performance_mysql56.md](docs/playbook_performance_mysql56.md): playbook de performance para MySQL 5.6.12 con consultas EXPLAIN, checklist de índices y criterios de validación.
+- [docs/reporte_explain_adminerp_copy.md](docs/reporte_explain_adminerp_copy.md): reporte de EXPLAIN en adminerp_copy (solo lectura).
+
+Auditorías realizadas (solo lectura):
+- DDL de vistas financieras en `adminerp_copy` (WAC/COGS/márgenes).
+- Revisión de índices actuales vs checklist mínimo (documentado en el análisis y playbook).
 
 ---
 

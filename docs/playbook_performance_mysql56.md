@@ -80,17 +80,16 @@ LIMIT 50;
 > Este checklist esta pensado para MySQL 5.6.12. Ajustar a DDL real.
 
 **bar_comanda**
-- `(id_operacion, fecha_emision)`
+- `(id_operacion, fecha)`
 - `(estado, estado_comanda, estado_impresion)`
-- `(id)`
 
 **bar_detalle_comanda_salida**
 - `(id_comanda, id_producto)`
 - `(fecha_emision)` si existe
 
 **alm_ingreso**
-- `(id_producto)`
-- `(fecha_ingreso)` si aplica
+- No tiene `id_producto`; el indice relevante esta en `alm_detalle_ingreso`.
+- `(fecha)` si aplica
 
 **alm_producto**
 - `(estado)` si se filtra por `estado='HAB'`
