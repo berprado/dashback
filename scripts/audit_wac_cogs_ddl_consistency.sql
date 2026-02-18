@@ -145,22 +145,22 @@ SELECT '=== PARTE 4: OPERACIONES ACTIVAS ===' AS seccion;
 
 -- Obtener operaciones activas (para usar como referencia)
 SELECT 
-    id_operacion,
-    estado,
-    estado_operacion
-FROM ope_operacion
-WHERE estado = 'HAB'
-  AND estado_operacion IN (22, 24)
+        op.id AS id_operacion,
+        op.estado,
+        op.estado_operacion
+FROM ope_operacion op
+WHERE op.estado = 'HAB'
+    AND op.estado_operacion IN (22, 24)
 LIMIT 1;
 
 -- Si no hay operaciones activas, usar la más reciente cerrada
 SELECT 
-    id_operacion,
-    estado,
-    estado_operacion
-FROM ope_operacion
-WHERE estado = 'INA'
-ORDER BY id_operacion DESC
+        op.id AS id_operacion,
+        op.estado,
+        op.estado_operacion
+FROM ope_operacion op
+WHERE op.estado = 'INA'
+ORDER BY op.id DESC
 LIMIT 1;
 
 -- ========================================================================

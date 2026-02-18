@@ -211,6 +211,7 @@ Se incorporaron documentos de referencia para consolidar y operar mejor el stack
 Auditorías realizadas (solo lectura):
 - DDL de vistas financieras en `adminerp_copy` (WAC/COGS/márgenes).
 - Revisión de índices actuales vs checklist mínimo (documentado en el análisis y playbook).
+- Corrección de script de auditoría WAC/COGS: en `ope_operacion` se usa `op.id AS id_operacion` (evita error `Unknown column 'id_operacion' in 'field list'`).
 
 ---
 

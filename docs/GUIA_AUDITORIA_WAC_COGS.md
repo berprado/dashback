@@ -28,16 +28,16 @@ Primero necesitas identificar qué operación usar como referencia:
 
 ```sql
 -- Obtener operación activa (si existe)
-SELECT id_operacion, estado, estado_operacion
-FROM ope_operacion
-WHERE estado = 'HAB' AND estado_operacion IN (22, 24)
+SELECT op.id AS id_operacion, op.estado, op.estado_operacion
+FROM ope_operacion op
+WHERE op.estado = 'HAB' AND op.estado_operacion IN (22, 24)
 LIMIT 1;
 
 -- Si no hay activa, obtener la más reciente cerrada
-SELECT id_operacion, estado, estado_operacion
-FROM ope_operacion
-WHERE estado = 'INA'
-ORDER BY id_operacion DESC
+SELECT op.id AS id_operacion, op.estado, op.estado_operacion
+FROM ope_operacion op
+WHERE op.estado = 'INA'
+ORDER BY op.id DESC
 LIMIT 1;
 ```
 

@@ -47,6 +47,9 @@ Cómo leer esta guía (para evitar confusiones):
 - Las vistas pueden vivir en esquemas distintos (p.ej. `adminerp_copy` en local y `adminerp` en producción).
 - En el código Python, evitar hardcodear el esquema: usar nombres no calificados (ej. `comandas_v6`) y depender de la DB definida en la URL.
 
+### Nota de auditoría SQL manual
+- En consultas directas a `ope_operacion`, usar `op.id AS id_operacion` (la PK real es `id`; el alias estandariza reportes/scripts).
+
 ### Convenciones de negocio (importantes)
 - `bar_comanda.estado` es el **estado lógico** del registro (`HAB` / `DES`).  
   ✅ El dashboard debe **mostrar solo `HAB`**.

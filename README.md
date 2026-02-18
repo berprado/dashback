@@ -78,6 +78,7 @@
 Scripts:
 - [scripts/create_indexes_safe.sql](scripts/create_indexes_safe.sql): script SQL con verificación previa de índices (modo seguro para MySQL 5.6.12).
 - [scripts/apply_indexes_and_explain.py](scripts/apply_indexes_and_explain.py): script Python para aplicar índices y ejecutar EXPLAIN antes/después.
+- [scripts/audit_wac_cogs_ddl_consistency.sql](scripts/audit_wac_cogs_ddl_consistency.sql): auditoría read-only WAC/COGS/márgenes entre ambientes (usa `ope_operacion.id AS id_operacion` para compatibilidad de esquema).
 
 Capturas:
 - [docs/capturas/](docs/capturas/)
