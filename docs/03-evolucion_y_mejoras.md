@@ -207,6 +207,11 @@ Se incorporaron documentos de referencia para consolidar y operar mejor el stack
 - [docs/analisis_wac_cogs_margenes.md](docs/analisis_wac_cogs_margenes.md): análisis completo de WAC/COGS/márgenes, inconsistencias detectadas y oportunidades de mejora.
 - [docs/playbook_performance_mysql56.md](docs/playbook_performance_mysql56.md): playbook de performance para MySQL 5.6.12 con consultas EXPLAIN, checklist de índices y criterios de validación.
 - [docs/reporte_explain_adminerp_copy.md](docs/reporte_explain_adminerp_copy.md): reporte de EXPLAIN en adminerp_copy (solo lectura).
+- [docs/wac_cogs/analisis_pourcost_local_vs_produccion_2026-02-20.md](docs/wac_cogs/analisis_pourcost_local_vs_produccion_2026-02-20.md): análisis detallado del flujo de Pour Cost (local vs producción).
+- [docs/wac_cogs/analisis_wac_local_vs_produccion_2026-02-20.md](docs/wac_cogs/analisis_wac_local_vs_produccion_2026-02-20.md): análisis detallado de la cadena WAC (local vs producción).
+- [docs/wac_cogs/analisis_cogs_local_vs_produccion_2026-02-20.md](docs/wac_cogs/analisis_cogs_local_vs_produccion_2026-02-20.md): análisis detallado de COGS y su trazabilidad (local vs producción).
+- [docs/wac_cogs/playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md](docs/wac_cogs/playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md): playbook comparativo de troubleshooting por capas (WAC → COGS → Pour Cost).
+- [docs/wac_cogs/runbook_rapido_wac_cogs_pourcost_2026-02-20.md](docs/wac_cogs/runbook_rapido_wac_cogs_pourcost_2026-02-20.md): runbook corto operativo (checklist + SQL mínimo + criterios de cierre).
 
 Auditorías realizadas (solo lectura):
 - DDL de vistas financieras en `adminerp_copy` (WAC/COGS/márgenes).

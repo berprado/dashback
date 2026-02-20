@@ -2,6 +2,31 @@
 
 Documento tecnico para onboarding. Resume el origen y la trazabilidad de los datos que alimentan costos (COGS), ventas y margen por operativa.
 
+## Documentos recomendados (diagnóstico rápido)
+
+- [playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md](playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md): matriz de troubleshooting por capas (WAC → COGS → Pour Cost).
+- [runbook_rapido_wac_cogs_pourcost_2026-02-20.md](runbook_rapido_wac_cogs_pourcost_2026-02-20.md): guía operativa de 1 página para soporte.
+
+## Ruta recomendada de lectura (onboarding)
+
+### Ruta corta (15-20 min, soporte/incidentes)
+
+1. [runbook_rapido_wac_cogs_pourcost_2026-02-20.md](runbook_rapido_wac_cogs_pourcost_2026-02-20.md)
+2. [playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md](playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md)
+
+### Ruta analítica (45-60 min, BI/auditoría)
+
+1. [analisis_wac_local_vs_produccion_2026-02-20.md](analisis_wac_local_vs_produccion_2026-02-20.md)
+2. [analisis_cogs_local_vs_produccion_2026-02-20.md](analisis_cogs_local_vs_produccion_2026-02-20.md)
+3. [analisis_pourcost_local_vs_produccion_2026-02-20.md](analisis_pourcost_local_vs_produccion_2026-02-20.md)
+4. [playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md](playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md)
+
+### Ruta de implementación (dev)
+
+1. Este documento: [consultas_cogs_wac.md](consultas_cogs_wac.md)
+2. [../02-guia_dashboard_backstage.md](../02-guia_dashboard_backstage.md)
+3. [../analisis_wac_cogs_margenes.md](../analisis_wac_cogs_margenes.md)
+
 ## Glosario
 
 - **COGS** (Cost of Goods Sold): costo de los insumos consumidos para producir lo vendido.

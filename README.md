@@ -74,6 +74,8 @@
 - [docs/reporte_explain_adminerp_copy.md](docs/reporte_explain_adminerp_copy.md): reporte de EXPLAIN baseline (solo lectura).
 - [docs/wac_cogs/consultas_cogs_wac.md](docs/wac_cogs/consultas_cogs_wac.md): guía técnica de consultas COGS y WAC (onboarding).
 - [docs/wac_cogs/consultas_kpis_actividad_cortesias.md](docs/wac_cogs/consultas_kpis_actividad_cortesias.md): guía técnica de KPIs, actividad y cortesías (onboarding).
+- [docs/wac_cogs/playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md](docs/wac_cogs/playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md): playbook comparativo de diagnóstico (WAC vs COGS vs Pour Cost).
+- [docs/wac_cogs/runbook_rapido_wac_cogs_pourcost_2026-02-20.md](docs/wac_cogs/runbook_rapido_wac_cogs_pourcost_2026-02-20.md): runbook rápido operativo (checklist + SQL mínimo).
 
 Scripts:
 - [scripts/create_indexes_safe.sql](scripts/create_indexes_safe.sql): script SQL con verificación previa de índices (modo seguro para MySQL 5.6.12).
@@ -82,6 +84,19 @@ Scripts:
 
 Capturas:
 - [docs/capturas/](docs/capturas/)
+
+## 🧭 Ruta recomendada de lectura (onboarding)
+- **Soporte / incidentes (15-20 min):**
+   - [docs/wac_cogs/runbook_rapido_wac_cogs_pourcost_2026-02-20.md](docs/wac_cogs/runbook_rapido_wac_cogs_pourcost_2026-02-20.md)
+   - [docs/wac_cogs/playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md](docs/wac_cogs/playbook_comparativo_wac_cogs_pourcost_local_vs_produccion_2026-02-20.md)
+- **BI / auditoría (45-60 min):**
+   - [docs/wac_cogs/analisis_wac_local_vs_produccion_2026-02-20.md](docs/wac_cogs/analisis_wac_local_vs_produccion_2026-02-20.md)
+   - [docs/wac_cogs/analisis_cogs_local_vs_produccion_2026-02-20.md](docs/wac_cogs/analisis_cogs_local_vs_produccion_2026-02-20.md)
+   - [docs/wac_cogs/analisis_pourcost_local_vs_produccion_2026-02-20.md](docs/wac_cogs/analisis_pourcost_local_vs_produccion_2026-02-20.md)
+- **Desarrollo (implementación):**
+   - [docs/wac_cogs/consultas_cogs_wac.md](docs/wac_cogs/consultas_cogs_wac.md)
+   - [docs/02-guia_dashboard_backstage.md](docs/02-guia_dashboard_backstage.md)
+   - [docs/analisis_wac_cogs_margenes.md](docs/analisis_wac_cogs_margenes.md)
 
 ## 🧭 Estado de implementación
 - ✅ Implementado (lo que corre hoy en este repo): conexión por Streamlit Connections, arranque tiempo real/histórico, KPIs/bloques principales, actividad, gráficos y detalle bajo demanda.
