@@ -126,6 +126,11 @@ Requisitos mínimos esperados:
 
 La consulta consolidada suma esos campos y calcula `margen_pct = (margen / ventas) * 100`.
 
+Regla UI para KPI de Pour Cost %:
+- `<28%`: verde
+- `28% a 30%`: amarillo
+- `>30%`: rojo
+
 Detalle por comanda:
 - Fuente: `vw_margen_comanda`.
 - Campos esperados: `id_operacion`, `id_comanda`, `id_barra`, `total_venta`, `cogs_comanda`, `margen_comanda`.
@@ -148,6 +153,12 @@ COGS por comanda:
 - Campos esperados: `id_operacion`, `id_comanda`, `id_barra`, `cogs_comanda`.
 - Se ordena por `cogs_comanda DESC` y se aplica un límite configurable desde la UI.
 - Ver solo el costo, sin precio de venta: ideal para cortesías y auditoría de consumo puro.
+
+Pour Cost por combos:
+- Fuente principal: vista de detalle de comandas (`comandas_v6` / `comandas_v6_todas`) + `vw_cogs_comanda`.
+- Métrica: `pour_cost_pct = cogs_asignado_combo / ventas_combo * 100`.
+- COGS por combo: estimado por prorrateo de `cogs_comanda` según participación de ventas del combo en cada comanda.
+- Objetivo UX: identificar rápidamente combos `>30%` (riesgo de margen) frente a combos `≤30%`.
 
 ## 1) Etapa 1 — Preparar las vistas SQL (fuente de verdad)
 

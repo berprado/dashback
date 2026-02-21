@@ -113,6 +113,18 @@ Esta consulta aísla el problema de cantidades del problema de costos: si algo f
 Se agregó el **COGS por comanda** bajo demanda (expander), mostrando solo `cogs_comanda` (sin precio de venta).
 Ideal para cortesías (tienen COGS pero no ventas) y auditoría de consumo puro. Bisagra entre inventario y finanzas.
 
+Se agregó el bloque **Pour Cost por combos** bajo demanda (expander), con:
+- Gráfico de barras por combo (`pour_cost_pct`) y línea de referencia en 30%.
+- Clasificación visual de combos por umbral: `>30%` y `≤30%`.
+- Tabla de soporte con ventas por combo, COGS asignado y pour cost.
+
+Nota técnica: el COGS por combo se estima por prorrateo de `cogs_comanda` según la participación de ventas del combo dentro de la comanda.
+
+Se ajustó la semántica de umbrales del KPI **Pour Cost %** en UI:
+- `<28%` = verde
+- `28% a 30%` = amarillo
+- `>30%` = rojo
+
 ### Mejoras en gráficos (optimización y UX)
 
 Se refactorizo toda la sección de gráficos para eliminar redundancias y mejorar la experiencia:

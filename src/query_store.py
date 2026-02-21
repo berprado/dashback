@@ -771,6 +771,85 @@ def q_cogs_por_comanda(view_name: str, where_sql: str, *, limit: int) -> str:
     """
 
 
+def q_pour_cost_por_combo(view_name: str, where_sql: str, *, limit: int) -> str:
+    """Pour cost por combo (prorrateo de COGS por proporción de venta).
+
+    Estrategia:
+    1. Agrupa ventas por combo (nombre) dentro de cada comanda.
+    2. Obtiene COGS total de la comanda desde `vw_cogs_comanda`.
+    3. Prorratea el COGS según la proporción de ventas de cada combo.
+    
+    Fórmula: cogs_asignado = cogs_total_comanda * (ventas_combo / ventas_total_comanda)
+    """
+
+    cond_venta = _cond_venta_final("v")
+    where_venta = _append_condition(where_sql, cond_venta)
+    
+    cond_combo = "COALESCE(v.id_salida_combo_coctel, 0) <> 0"
+    where_combo = _append_condition(where_venta, cond_combo)
+
+    return f"""
+    SELECT
+        agg.nombre_combo,
+        agg.cantidad_vendida,
+        ROUND(agg.cogs_asignado / NULLIF(agg.cantidad_vendida, 0), 4) AS cogs_combo,
+        agg.ventas_combo,
+        ROUND(agg.cogs_asignado, 2) AS cogs_asignado,
+        ROUND(agg.cogs_asignado / NULLIF(agg.ventas_combo, 0) * 100, 2) AS pour_cost_pct
+    FROM (
+        -- Agrupa por nombre de combo (globalmente) sumando todas las instancias
+        SELECT
+            x.nombre_combo,
+            SUM(x.cantidad_vendida) AS cantidad_vendida,
+            SUM(x.ventas_combo) AS ventas_combo,
+            SUM(x.cogs_asignado) AS cogs_asignado
+        FROM (
+            -- Prorrateo por combo dentro de cada comanda
+            SELECT
+                combo_ventas.id_operacion,
+                combo_ventas.id_comanda,
+                combo_ventas.nombre_combo,
+                combo_ventas.cantidad_vendida,
+                combo_ventas.ventas_combo,
+                COALESCE(cc.cogs_comanda, 0) * 
+                    (combo_ventas.ventas_combo / NULLIF(comanda_totales.ventas_total, 0)) 
+                AS cogs_asignado
+            FROM (
+                SELECT
+                    v.id_operacion,
+                    v.id_comanda,
+                    COALESCE(v.nombre, 'SIN NOMBRE') AS nombre_combo,
+                    SUM(v.cantidad) AS cantidad_vendida,
+                    SUM(v.sub_total) AS ventas_combo
+                FROM {view_name} v
+                {where_combo}
+                GROUP BY v.id_operacion, v.id_comanda, COALESCE(v.nombre, 'SIN NOMBRE')
+            ) combo_ventas
+            LEFT JOIN (
+                SELECT
+                    v.id_operacion,
+                    v.id_comanda,
+                    SUM(v.sub_total) AS ventas_total
+                FROM {view_name} v
+                {where_venta}
+                GROUP BY v.id_operacion, v.id_comanda
+            ) comanda_totales
+                ON comanda_totales.id_operacion = combo_ventas.id_operacion
+                AND comanda_totales.id_comanda = combo_ventas.id_comanda
+            LEFT JOIN vw_cogs_comanda cc
+                ON cc.id_operacion = combo_ventas.id_operacion
+                AND cc.id_comanda = combo_ventas.id_comanda
+                AND cc.id_barra = 1
+        ) x
+        WHERE x.ventas_combo > 0
+        GROUP BY x.nombre_combo
+    ) agg
+    WHERE agg.ventas_combo > 0
+    ORDER BY pour_cost_pct DESC, agg.ventas_combo DESC
+    LIMIT :limit;
+    """
+
+
 def q_items_por_comanda(view_name: str, id_comanda: int) -> str:
     """Obtiene los ítems consumidos de una comanda específica.
 

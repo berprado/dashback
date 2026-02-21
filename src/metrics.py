@@ -26,6 +26,7 @@ from src.query_store import (
 	q_consumo_valorizado,
 	q_consumo_sin_valorar,
 	q_cogs_por_comanda,
+	q_pour_cost_por_combo,
 	q_ventas_por_hora,
 	q_items_por_comanda,
 )
@@ -248,6 +249,28 @@ def get_cogs_por_comanda(
 		sql,
 		params,
 		context="Error ejecutando COGS por comanda",
+		ttl=_ttl_for_mode(mode),
+	)
+
+
+def get_pour_cost_por_combo(
+	conn: Any,
+	view_name: str,
+	filters: Filters,
+	mode: str,
+	*,
+	limit: int = 50,
+) -> Any:
+	"""Pour cost por combo (costo/venta) para priorización de margen."""
+
+	where_sql, params = build_where(filters, mode, table_alias="v")
+	params["limit"] = int(limit)
+	sql = q_pour_cost_por_combo(view_name, where_sql, limit=int(limit))
+	return _run_df(
+		conn,
+		sql,
+		params,
+		context="Error ejecutando pour cost por combo",
 		ttl=_ttl_for_mode(mode),
 	)
 
