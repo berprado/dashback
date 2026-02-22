@@ -258,28 +258,28 @@ def render_margenes_section(
                     st.subheader("Detalles de Comandas")
                     render_comanda_expanders_from_df(conn, cogs_df, startup.view_name, mode_for_metrics)
 
-        with st.expander("Pour Cost por combos (umbral 30%)", expanded=False):
+        with st.expander("Pour Cost por ítems (combos + comandables, umbral 30%)", expanded=False):
             st.caption(
-                "Clasifica combos según su pour cost: por debajo o igual a 30% y por encima de 30%. "
-                "El COGS total por combo se estima por prorrateo de COGS de comanda según participación en ventas."
+                "Clasifica ítems (combos y comandables) según su pour cost: por debajo o igual a 30% y por encima de 30%. "
+                "El COGS por ítem se estima por prorrateo del COGS de comanda según participación en ventas."
             )
             cargar_pour_combo = st.checkbox(
-                "Cargar pour cost por combos",
+                "Cargar pour cost por ítems",
                 value=False,
                 key="pour_cost_combo_load",
                 help=(
-                    "Trae ranking de combos con ventas, COGS asignado y pour cost %. "
-                    "Permite priorizar combos con pour cost por encima de 30%."
+                    "Trae ranking de ítems (combos + comandables) con ventas, COGS asignado y pour cost %. "
+                    "Permite priorizar ítems con pour cost por encima de 30%."
                 ),
             )
             limit_pour_combo = st.number_input(
-                "Límite combos",
+                "Límite ítems",
                 min_value=10,
                 max_value=300,
                 value=60,
                 step=10,
                 key="limit_pour_cost_combo",
-                help="Máximo de combos a analizar en el gráfico y tabla.",
+                help="Máximo de ítems a analizar en el gráfico y tabla.",
             )
 
             if cargar_pour_combo:
@@ -292,7 +292,7 @@ def render_margenes_section(
                 )
 
                 if pour_combo_df is None or pour_combo_df.empty:
-                    st.info("Sin datos de combos para el contexto seleccionado.")
+                    st.info("Sin datos de ítems para el contexto seleccionado.")
                 else:
                     data = pour_combo_df.copy()
                     data["pour_cost_pct"] = pd.to_numeric(data["pour_cost_pct"], errors="coerce").fillna(0.0)
@@ -300,6 +300,7 @@ def render_margenes_section(
                     data["cogs_combo"] = pd.to_numeric(data["cogs_combo"], errors="coerce").fillna(0.0)
                     data["ventas_combo"] = pd.to_numeric(data["ventas_combo"], errors="coerce").fillna(0.0)
                     data["cogs_asignado"] = pd.to_numeric(data["cogs_asignado"], errors="coerce").fillna(0.0)
+                    data["tipo_item"] = data["tipo_item"].fillna("Item")
                     data["estado_umbral"] = data["pour_cost_pct"].apply(
                         lambda x: "Sobre 30%" if float(x) > 30 else "≤ 30%"
                     )
@@ -307,8 +308,8 @@ def render_margenes_section(
                     sobre_30 = int((data["pour_cost_pct"] > 30).sum())
                     bajo_igual_30 = int((data["pour_cost_pct"] <= 30).sum())
                     c1, c2 = st.columns(2)
-                    c1.metric("Combos > 30%", sobre_30, border=True)
-                    c2.metric("Combos ≤ 30%", bajo_igual_30, border=True)
+                    c1.metric("Ítems > 30%", sobre_30, border=True)
+                    c2.metric("Ítems ≤ 30%", bajo_igual_30, border=True)
 
                     chart_df = data.sort_values("pour_cost_pct", ascending=False)
                     fig = px.bar(
@@ -317,14 +318,15 @@ def render_margenes_section(
                         y="nombre_combo",
                         color="estado_umbral",
                         orientation="h",
-                        title="Pour Cost % por combo",
+                        title="Pour Cost % por ítem",
                         labels={
                             "pour_cost_pct": "Pour Cost %",
-                            "nombre_combo": "Combo",
+                            "nombre_combo": "Ítem",
                             "estado_umbral": "Clasificación",
                         },
                         color_discrete_map={"Sobre 30%": "#ef4444", "≤ 30%": "#22c55e"},
                         hover_data={
+                            "tipo_item": True,
                             "cantidad_vendida": ":,.2f",
                             "cogs_combo": ":,.4f",
                             "ventas_combo": ":,.2f",
@@ -332,7 +334,15 @@ def render_margenes_section(
                         },
                     )
                     fig.add_vline(x=30, line_dash="dash", line_color="#f59e0b")
-                    fig.update_layout(margin=dict(l=10, r=10, t=40, b=10))
+                    fig.update_layout(
+                        height=max(420, int(len(chart_df) * 34)),
+                        margin=dict(l=220, r=10, t=40, b=10),
+                    )
+                    fig.update_yaxes(
+                        automargin=True,
+                        categoryorder="array",
+                        categoryarray=chart_df["nombre_combo"].tolist()[::-1],
+                    )
                     apply_plotly_bs(fig, axis="x", decimals=2)
                     st.plotly_chart(fig, width="stretch")
 
@@ -347,6 +357,7 @@ def render_margenes_section(
                     st.dataframe(
                         table_df[
                             [
+                                "tipo_item",
                                 "nombre_combo",
                                 "cogs_combo",
                                 "cantidad_vendida",
