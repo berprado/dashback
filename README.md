@@ -136,7 +136,12 @@ Capturas:
    - **Exportación**: botón “⬇️ Descargar CSV” en cada gráfico.
 - **Detalle** (últimas 500 filas) bajo demanda.
    - Nota: las columnas monetarias del detalle se formatean como texto para asegurar consistencia visual; por eso, si ordenas esas columnas, el orden puede ser **lexicográfico** (texto) en lugar de numérico.
-- **Healthcheck**: botón “Probar conexión” valida conexión y existencia de vistas/objetos requeridos (incluye log de impresión).
+- **Healthcheck**: botón “Probar conexión” valida conexión y existencia de objetos requeridos (vistas y tablas core usadas por la app, incluye log de impresión).
+- **Auditoría de cobertura SQL (log)**: al presionar “Probar conexión”, se guarda solo el último snapshot en `logs/healthcheck_coverage_latest.log` (JSON).
+   Incluye:
+   - `missing_in_db`: objetos requeridos por healthcheck que faltan en la DB activa.
+   - `faltantes_en_healthcheck`: objetos usados por la app que aún no están incluidos en el hardcode de healthcheck.
+   - `sobrantes_en_healthcheck`: objetos hardcodeados en healthcheck que no aparecen en las dependencias SQL directas de la app.
 - **Debug opcional**: checkbox para mostrar SQL/params cuando ocurre un error.
 
 UX:

@@ -210,6 +210,23 @@ Nota de formato/importante:
 - En el detalle, las columnas monetarias se muestran ya formateadas como texto (`Bs ...`) para asegurar consistencia visual.
 - Por ese motivo, al ordenar por esas columnas desde la UI, el ordenamiento puede ser **lexicográfico** (texto) y no numérico.
 
+### 4.7 Auditoría de cobertura del healthcheck (log)
+
+Se agregó una bitácora técnica para validar la cobertura del hardcode de `Q_HEALTHCHECK` respecto a los objetos SQL que la app consulta directamente.
+
+Cobertura actual del healthcheck:
+- Vistas funcionales del dashboard.
+- Tablas core usadas por arranque/joins (`ope_operacion`, `parameter_table`, `bar_comanda`, `alm_producto`).
+
+- Trigger: botón **“Probar conexión”** en sidebar.
+- Salida: `logs/healthcheck_coverage_latest.log` (snapshot del último chequeo, sobrescribe en cada ejecución).
+- Campos clave:
+	- `missing_in_db`: objetos del healthcheck que no existen en la DB activa.
+	- `faltantes_en_healthcheck`: objetos usados por la app pero no incluidos en `Q_HEALTHCHECK`.
+	- `sobrantes_en_healthcheck`: objetos incluidos en `Q_HEALTHCHECK` que no figuran en dependencias SQL directas de la app.
+
+Objetivo: tener trazabilidad sin saturar la UI con listas técnicas de diagnóstico de cobertura.
+
 ---
 
 ## 5) Documentación técnica añadida

@@ -8,6 +8,57 @@ import re
 import pandas as pd
 
 
+HEALTHCHECK_OBJECTS: tuple[tuple[str, str], ...] = (
+    ("comandas_v6", "core"),
+    ("comandas_v6_todas", "core"),
+    ("comandas_v6_base", "core"),
+    ("comandas_v7", "diagnostico"),
+    ("vw_comanda_ultima_impresion", "diagnostico"),
+    ("bar_comanda_impresion", "diagnostico"),
+    ("vw_margen_comanda", "pnl"),
+    ("vw_consumo_valorizado_operativa", "pnl"),
+    ("vw_consumo_insumos_operativa", "pnl"),
+    ("vw_cogs_comanda", "pnl"),
+    ("ope_operacion", "core_tables"),
+    ("parameter_table", "core_tables"),
+    ("bar_comanda", "core_tables"),
+    ("alm_producto", "core_tables"),
+)
+
+# Dependencias SQL usadas directamente por el código (tablas/vistas consultadas en queries).
+APP_SQL_OBJECTS: tuple[str, ...] = (
+    "comandas_v6",
+    "comandas_v6_todas",
+    "comandas_v6_base",
+    "comandas_v7",
+    "vw_comanda_ultima_impresion",
+    "bar_comanda_impresion",
+    "vw_margen_comanda",
+    "vw_consumo_valorizado_operativa",
+    "vw_consumo_insumos_operativa",
+    "vw_cogs_comanda",
+    "ope_operacion",
+    "parameter_table",
+    "bar_comanda",
+    "alm_producto",
+)
+
+
+def get_healthcheck_coverage_report() -> dict[str, list[str]]:
+    """Compara cobertura del healthcheck vs objetos SQL usados por la app.
+
+    Retorna:
+    - faltantes: usados por la app pero no incluidos en el healthcheck.
+    - sobrantes: incluidos en el healthcheck pero no usados por la app.
+    """
+
+    healthcheck_set = {name for name, _ in HEALTHCHECK_OBJECTS}
+    app_set = set(APP_SQL_OBJECTS)
+    faltantes = sorted(app_set - healthcheck_set)
+    sobrantes = sorted(healthcheck_set - app_set)
+    return {"faltantes": faltantes, "sobrantes": sobrantes}
+
+
 # Define aquí tus consultas SQL reutilizables
 # Healthcheck: valida conexión y existencia de vistas/tablas esperadas en la DB activa.
 Q_HEALTHCHECK = """
@@ -28,6 +79,10 @@ FROM (
     UNION ALL SELECT 'vw_consumo_valorizado_operativa', 'pnl'
     UNION ALL SELECT 'vw_consumo_insumos_operativa', 'pnl'
     UNION ALL SELECT 'vw_cogs_comanda', 'pnl'
+    UNION ALL SELECT 'ope_operacion', 'core_tables'
+    UNION ALL SELECT 'parameter_table', 'core_tables'
+    UNION ALL SELECT 'bar_comanda', 'core_tables'
+    UNION ALL SELECT 'alm_producto', 'core_tables'
 ) req
 LEFT JOIN information_schema.TABLES t
     ON t.TABLE_SCHEMA = DATABASE()

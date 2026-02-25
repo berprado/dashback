@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime
+from pathlib import Path
+
 import streamlit as st
 
 from src.db import get_connection
 from src.metrics import QueryExecutionError
-from src.query_store import Q_HEALTHCHECK, Q_LIST_OPERATIONS, Filters, fetch_dataframe
+from src.query_store import (
+    Q_HEALTHCHECK,
+    Q_LIST_OPERATIONS,
+    Filters,
+    fetch_dataframe,
+    get_healthcheck_coverage_report,
+)
 from src.startup import determine_startup_context
 from src.ui.layout import render_page_header, render_sidebar_connection_section
 from src.ui.sections.charts import render_charts_section
@@ -117,6 +127,30 @@ def _maybe_render_sql_debug(exc: Exception) -> None:
     st.code(exc.sql, language="sql")
     st.caption("Params")
     st.json(exc.params)
+
+
+def _append_healthcheck_audit_log(
+    *,
+    connection_name: str,
+    db_name: str | None,
+    missing_in_db: list[str],
+    coverage_report: dict[str, list[str]],
+) -> None:
+    """Persiste solo el último snapshot de auditoría de healthcheck/cobertura."""
+
+    logs_dir = Path("logs")
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "connection_name": connection_name,
+        "database_name": db_name,
+        "missing_in_db": sorted(set(missing_in_db)),
+        "faltantes_en_healthcheck": coverage_report.get("faltantes", []),
+        "sobrantes_en_healthcheck": coverage_report.get("sobrantes", []),
+    }
+    payload_line = json.dumps(payload, ensure_ascii=False) + "\n"
+    with (logs_dir / "healthcheck_coverage_latest.log").open("w", encoding="utf-8") as fh:
+        fh.write(payload_line)
 
 
 conn = None
@@ -242,6 +276,7 @@ if probar:
         if conn is None:
             conn = get_connection(connection_name)
         df = fetch_dataframe(conn, Q_HEALTHCHECK)
+        coverage_report = get_healthcheck_coverage_report()
         missing: list[str] = []
         db_name = None
         if df is not None and not df.empty:
@@ -269,6 +304,14 @@ if probar:
                 + (f" · Base activa: {db_name}" if db_name else "")
                 + " · Vistas OK"
             )
+
+        _append_healthcheck_audit_log(
+            connection_name=connection_name,
+            db_name=db_name,
+            missing_in_db=missing,
+            coverage_report=coverage_report,
+        )
+        st.caption("Auditoría guardada en logs/healthcheck_coverage_latest.log")
 
         st.dataframe(df, width="stretch")
     except Exception as exc:

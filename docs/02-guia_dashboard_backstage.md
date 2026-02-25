@@ -22,11 +22,20 @@ Esta guía mezcla 2 cosas:
   - Filtros básicos con `Filters` + `build_where` (por operativas o fechas)
   - KPIs, cortesías, estado operativo, gráficos, detalle bajo demanda
   - Bloque **Actividad** (última comanda / minutos desde la última / ritmo)
+  - Healthcheck con bitácora de cobertura SQL en archivo log al usar “Probar conexión”
 - 🟡 **Guía/Referencia o Futuro** (no necesariamente implementado tal cual):
   - Ejemplos de engine SQLAlchemy “manual” (`create_engine`) y `pd.read_sql`
   - Prefacturación (`q_prefacturacion`) y otros bloques mencionados como ideas
 
 Cuando haya dudas, la fuente de verdad es el código en `src/`.
+
+Nota de observabilidad técnica (healthcheck):
+- Al usar el botón **“Probar conexión”**, además del resultado visual de conexión/objetos en UI, la app persiste un snapshot en `logs/healthcheck_coverage_latest.log`.
+- El archivo se sobrescribe en cada ejecución (retención: solo último chequeo).
+- El healthcheck valida vistas y tablas core consultadas por la app (no solo vistas).
+- Ese registro incluye diferencias de cobertura entre:
+  - objetos requeridos por el healthcheck hardcodeado y
+  - objetos SQL consultados directamente por la app.
 
 Cómo leer esta guía (para evitar confusiones):
 - ✅ “Implementado” significa que existe en el repo y se usa en el flujo actual.
