@@ -1,1 +1,1 @@
-{"timestamp": "2026-03-03T23:00:53", "connection_name": "mysql_prod", "database_name": "adminerp", "missing_in_db": [], "faltantes_en_healthcheck": [], "sobrantes_en_healthcheck": []}
+{"timestamp": "2026-03-05T04:13:07", "connection_name": "mysql_prod", "database_name": "adminerp", "missing_in_db": [], "faltantes_en_healthcheck": [], "sobrantes_en_healthcheck": []}
