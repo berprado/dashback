@@ -4,8 +4,6 @@ description: (Workspace) Researches and outlines multi-step plans
 argument-hint: Outline the goal or problem to research
 tools:
   - search
-  - github/get_issue
-  - github/get_issue_comments
   - agent
   - search/usages
   - read/problems
@@ -13,7 +11,6 @@ tools:
   - execute/testFailure
   - web/fetch
   - web/githubRepo
-  - github.vscode-pull-request-github/activePullRequest
 handoffs:
   - label: Start Implementation
     agent: agent
